@@ -16,7 +16,13 @@
     <link href='https://fonts.googleapis.com/css?family=Press+Start+2P&display=swap' rel='stylesheet'>
     <link href='https://fonts.googleapis.com/icon?family=Material+Icons'
       rel='stylesheet'>
-    <title>Pacman</title>
+    
+      <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+      <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+      <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
+
+    <link rel="stylesheet" href="stile.css">
+    <title>Satellite Games</title>
   </head>
 
   <body>
@@ -27,10 +33,34 @@
       <div id='preload-div' class='preload-div'></div>
 
       <div id='main-menu-container' class='main-menu-container'>
-        <img id='logo' class='logo' src='app/style/graphics/pacman_logo.png'>
+        <p>SatelliteGames</p>
+        <img id='logo' class='logo' src='app/style/graphics/pacman_logo.png'> <br>
+        <p>Il punteggio è salvato in automatico</p>
+        <h1>Username Instagram:</h1> <br>
+        <input id=name name="name" type="text" size="15" class='nomeInsta'> <br><br>
+
         <button id='game-start' class='game-start'>
-          PLAY
+          GIOCA
         </button>
+        
+        <div id="results">
+          <br>
+          <h2>Top 5</h2> 
+          <div class="top3">
+              <div class="two item">
+                  <table style="border-collapse: collapse; margin-left:auto; margin-right:auto;">
+                      <thead>
+                          <tr>
+                              <th>Nome</th>
+                              <th>Punteggio</th>
+                          </tr>
+                      </thead>
+                      <tbody id="myTable"></tbody>
+                  </table>
+              </div>
+          </div>
+        </div>
+
       </div>
 
       <div class='header-buttons'>
@@ -45,17 +75,17 @@
       </div>
 
       <div id='paused-text' class='paused-text'>
-        PAUSED
+        PAUSA
       </div>
 
       <div id='game-ui' class='game-ui'>
         <div id='row-top' class='row top'>
           <div class='column _25'>
-            <div class='one-up'>1UP</div>
+            <div class='one-up'>PUNTI</div>
             <div id='points-display'></div>
           </div>
           <div class='column _50'>
-            <div>HIGH SCORE</div>
+            <div>RECORD</div>
             <div id='high-score-display'></div>
           </div>
         </div>
@@ -131,10 +161,7 @@
           <div class='error-pacman'></div>
         </div>
         <div class='body'>
-          We were unable to load the images/sounds needed to play the game.</br></br>
-
-          This could be due to a poor connection, a strict network policy, or
-          by playing on an unsupported browser.
+          Impossibile caricare gli asset necessari al funzionamento del gioco.
         </div>
       </div>
 
@@ -144,5 +171,6 @@
         }
       </script>
     </div>
+    <script src="./firebase.js"></script>
   </body>
 </html>
