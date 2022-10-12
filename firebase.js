@@ -21,7 +21,7 @@ var app = firebase.initializeApp(firebaseConfig);
 
 const analytics = firebase.analytics();
 
-db.collection("players").orderBy("score", "desc").limit(5)
+/*db.collection("players").orderBy("score", "desc").limit(5)
 .get()
 .then(querySnapshot=>{
         querySnapshot.forEach(doc=>{
@@ -36,7 +36,24 @@ db.collection("players").orderBy("score", "desc").limit(5)
 })
 .catch(err=>{
     console.log(`Error: ${err}`)
-});
+}); */
+
+db.collection("players").orderBy("score", "desc").limit(5)
+.get()
+.then(querySnapshot=>{
+        querySnapshot.forEach(doc=>{
+            let data = doc.data();
+            let row  = `<tr>
+                            <td>${data.name}</td>
+                            <td>${data.score}</td>
+                      </tr>`;
+            let table = document.getElementById('myTable')
+            table.innerHTML += row
+        })
+})
+.catch(err=>{
+    console.log(`Error: ${err}`)
+}); 
 
 function display(){
           document.getElementById('table').style.display = "block";
