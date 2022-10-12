@@ -1,14 +1,13 @@
 //firebase needs thses to figure out on how we r connecting to database
 //configuring the app on the front end to link with our firebase which we created on website
 var firebaseConfig = {
-  apiKey: "AIzaSyBa9UrS6dOUZry33QMnZfSKUFsDUBV6Zj0",
-  authDomain: "flappybird-1efe3.firebaseapp.com",
-  databaseURL: "https://flappybird-1efe3-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "flappybird-1efe3",
-  storageBucket: "flappybird-1efe3.appspot.com",
-  messagingSenderId: "993302118393",
-  appId: "1:993302118393:web:f1de0e43d0ecd4d2f14728",
-  measurementId: "G-PY08LWYRR2"
+  apiKey: "AIzaSyAmIN1c6Pq_XtudGypeqs8hATMST5b1lcM",
+  authDomain: "acidman-e8e44.firebaseapp.com",
+  projectId: "acidman-e8e44",
+  storageBucket: "acidman-e8e44.appspot.com",
+  messagingSenderId: "232466403645",
+  appId: "1:232466403645:web:fdcf6dc54d14c1cf253554",
+  measurementId: "G-C6VT9P3C21"
 };
 
 // Initialize Firebase
