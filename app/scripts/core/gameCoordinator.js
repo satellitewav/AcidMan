@@ -58,6 +58,8 @@ class GameCoordinator {
     this.scale = this.determineScale(1);
     this.scaledTileSize = this.tileSize * this.scale;
     this.firstGame = true;
+    this.xDown = null;                                                        
+    this.yDown = null;
 
     this.movementKeys = {
       // WASD
@@ -694,6 +696,46 @@ class GameCoordinator {
     }
   }
 
+	getTouches(evt) {
+	  return evt.touches ||             // browser API
+	         evt.originalEvent.touches; // jQuery
+	}                                                     
+
+	handleTouchStart(evt) {
+	    const firstTouch = this.getTouches(evt)[0];                                      
+	    this.xDown = firstTouch.clientX;                                      
+	    this.yDown = firstTouch.clientY;                                      
+	};                                                
+
+	handleTouchMove(evt) {
+	    if ( ! this.xDown || ! this.yDown ) {
+	        return;
+	    }
+
+	    var xUp = evt.touches[0].clientX;                                    
+	    var yUp = evt.touches[0].clientY;
+
+	    var xDiff = this.xDown - xUp;
+	    var yDiff = this.yDown - yUp;
+
+	    if ( Math.abs( xDiff ) > Math.abs( yDiff ) ) {/*most significant*/
+	        if ( xDiff > 0 ) {
+	      		this.changeDirection("left");
+	        } else {
+	      		this.changeDirection("right");
+	        }                       
+	    } else {
+	        if ( yDiff > 0 ) {
+	      		this.changeDirection("up");
+	        } else { 
+	      		this.changeDirection("down");
+	        }                                                                 
+	    }
+	    /* reset values */
+	    this.xDown = null;
+	    this.yDown = null;                                             
+	};
+
   /**
    * Register listeners for various game sequences
    */
@@ -708,6 +750,8 @@ class GameCoordinator {
     window.addEventListener('addTimer', this.addTimer.bind(this));
     window.addEventListener('removeTimer', this.removeTimer.bind(this));
     window.addEventListener('releaseGhost', this.releaseGhost.bind(this));
+    window.addEventListener('touchstart', this.handleTouchStart.bind(this), false);        
+    window.addEventListener('touchmove', this.handleTouchMove.bind(this), false);
 
     const directions = ['up', 'down', 'left', 'right'];
 

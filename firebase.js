@@ -20,23 +20,6 @@ var app = firebase.initializeApp(firebaseConfig);
 
 const analytics = firebase.analytics();
 
-/*db.collection("players").orderBy("score", "desc").limit(5)
-.get()
-.then(querySnapshot=>{
-        querySnapshot.forEach(doc=>{
-            let data = doc.data();
-            let row  = `<tr style="margin-left:auto; margin-right:auto; padding: 5px; border: 0px solid black;">
-                            <td style="padding: 5px; border: 0px solid black;">${data.name}</td>
-                            <td>${data.score}</td>
-                      </tr>`;
-            let table = document.getElementById('myTable')
-            table.innerHTML += row
-        })
-})
-.catch(err=>{
-    console.log(`Error: ${err}`)
-}); */
-
 db.collection("players").orderBy("score", "desc").limit(5)
 .get()
 .then(querySnapshot=>{
