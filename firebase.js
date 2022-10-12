@@ -40,3 +40,8 @@ db.collection("players").orderBy("score", "desc").limit(5)
 function display(){
           document.getElementById('table').style.display = "block";
 }
+
+window.addEventListener("scroll", (e) => {
+    e.preventDefault();
+    window.scrollTo(0, 0);
+  });
