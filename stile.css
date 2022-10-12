@@ -11,12 +11,12 @@
     box-sizing: border-box;
     position: relative;
     background: rgb(216, 210, 210);
-    width: 45rem;
-    height: 30rem;
+    width: 48rem;
+    height: 34rem;
     text-align: center;
     padding: 0 0 0;
-    margin: 1rem 1rem 1rem;
-    border-radius: 0.5rem;
+    margin: 10rem 1rem 1rem;
+    border-radius: 3.5rem;
     transform-origin: bottom;
     transition: transform 200ms ease-in-out;
     box-shadow: 0 0 4rem 0 rgba(0, 0, 0, 0.1), 0 1rem 2rem -1rem rgba(0, 0, 0, 0.3);
@@ -63,16 +63,18 @@ th , tr {
     padding: 20px;
     border: 0px solid black;
     font-size: 24px;
+    border-spacing: 10rem 50rem;
  }
 
  /* Style all font awesome icons */
 .fa {
-    padding: 20px;
-    font-size: 30px;
-    width: 20px;
+    padding: 50px;
+    font-size: 50px;
+    width: 50px;
     text-align: center;
     text-decoration: none;
     border-radius: 50%;
+    margin: 5rem 0rem 0rem;
 }
   
   /* Add a hover effect if you want */
@@ -115,3 +117,27 @@ position: fixed;
 .testoNero {
     color: #000000;
 }
+
+.sottotitolo {
+    font-size: 15px;
+    text-align: center;
+}
+
+.tabella {
+    margin-left:auto; 
+    margin-right:auto;
+    border-spacing: 0rem 1rem;
+}
+
+table th {
+    padding: 12px 12px 12px 12px;
+    border: 15px solid rgba(255, 255, 255, 0);
+  }
+
+table td {
+    background-color: rgba(0, 255, 0, 0);
+    padding: 12px 12px 12px 12px;
+    border: 10px solid rgba(255, 255, 255, 0);
+    border-right: 0;
+    border-left: 0;
+  }
