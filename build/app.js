@@ -1117,6 +1117,7 @@ class GameCoordinator {
     this.mazeCover = document.getElementById('maze-cover');
     this.pointsDisplay = document.getElementById('points-display');
     this.highScoreDisplay = document.getElementById('high-score-display');
+    var highScore = "0";
     this.extraLivesDisplay = document.getElementById('extra-lives');
     this.fruitDisplay = document.getElementById('fruit-display');
     this.mainMenu = document.getElementById('main-menu-container');
@@ -1255,21 +1256,31 @@ class GameCoordinator {
    * Reveals the game underneath the loading covers and starts gameplay
    */
   startButtonClick() {
-    this.leftCover.style.left = '-50%';
-    this.rightCover.style.right = '-50%';
-    this.mainMenu.style.opacity = 0;
+    controlloUtente();
     this.gameStartButton.disabled = true;
+    this.oraInizia();
+  }
 
-    setTimeout(() => {
-      this.mainMenu.style.visibility = 'hidden';
-    }, 1000);
+  oraInizia(){
+    setTimeout(()=>{
+      console.log("inside timeout");
+      var highScore = window.localStorage.getItem('highScore');
+      console.log(highScore);
+      this.leftCover.style.left = '-50%';
+      this.rightCover.style.right = '-50%';
+      this.mainMenu.style.opacity = 0;
 
-    this.reset();
-    if (this.firstGame) {
-      this.firstGame = false;
-      this.init();
-    }
-    this.startGameplay(true);
+  
+      setTimeout(() => {
+        this.mainMenu.style.visibility = 'hidden';
+      }, 1000);
+      this.reset();
+      if (this.firstGame) {
+        this.firstGame = false;
+        this.init();
+      }
+      this.startGameplay(true);
+    },300);
   }
 
   /**
@@ -1515,7 +1526,6 @@ class GameCoordinator {
     this.allowPacmanMovement = false;
     this.allowPause = false;
     this.cutscene = true;
-    this.highScore = localStorage.getItem('highScore');
 
     if (this.firstGame) {
       setInterval(() => {
@@ -1603,8 +1613,12 @@ class GameCoordinator {
       });
     }
 
+    var record = window.localStorage.getItem('highScore');
+    console.log(record);
     this.pointsDisplay.innerHTML = '00';
-    this.highScoreDisplay.innerHTML = this.highScore || '00';
+    
+    this.highScoreDisplay.innerHTML = record || '00';
+    console.log(record);
     this.clearDisplay(this.fruitDisplay);
 
     const volumePreference = parseInt(
@@ -1620,7 +1634,6 @@ class GameCoordinator {
    */
   init() {
     this.registerEventListeners();
-
     this.gameEngine = new GameEngine(this.maxFps, this.entityList);
     this.gameEngine.start();
   }
@@ -1946,10 +1959,12 @@ class GameCoordinator {
   awardPoints(e) {
     this.points += e.detail.points;
     this.pointsDisplay.innerText = this.points;
-    if (this.points > (this.highScore || 0)) {
-      this.highScore = this.points;
-      this.highScoreDisplay.innerText = this.points;
-      localStorage.setItem('highScore', this.highScore);
+    var highScore = window.localStorage.getItem('highScore');
+    if (this.points > (highScore || 0)) {
+      highScore = this.points;
+      highScoreDisplay.innerText = this.points;
+      localStorage.setItem('highScore', highScore);
+      console.log(highScore);
     }
 
     if (this.points >= 10000 && !this.extraLifeGiven) {
@@ -2033,7 +2048,9 @@ class GameCoordinator {
    * Displays GAME OVER text and displays the menu so players can play again
    */
   gameOver() {
-    localStorage.setItem('highScore', this.highScore);
+    var highScore = window.localStorage.getItem('highScore');
+    localStorage.setItem('highScore', highScore);
+    console.log(highScore);
 
     new Timer(() => {
       this.displayText(
@@ -2410,6 +2427,32 @@ class GameCoordinator {
     }
   }
 }
+
+
+async function controlloUtente() {
+  // Make the initial query
+  var text=document.getElementById('name');
+  var migliore = "0";
+  var highScore = "0";
+  const query = await db.collection("players").where("name", "==", text.value).get();
+
+  if (!query.empty) {
+      const snapshot = query.docs[0];
+      const data = snapshot.data();
+      let migliore  = `${data.score}`;
+      var highScore = migliore;
+      console.log("Vecchio utente, assegno punteggio ", highScore);
+      window.localStorage.setItem('highScore', highScore);
+      console.log(highScore);
+      console.log(data);
+  } else {
+      var highScore = 0;
+      window.localStorage.setItem('highScore', highScore);
+      console.log("Nuovo utente, assegno punteggio ", highScore);
+  }
+
+}
+
 
 
 class GameEngine {
