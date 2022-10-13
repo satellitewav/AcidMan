@@ -6,6 +6,9 @@
 
 body {
   margin: 0;
+  -webkit-overflow-scrolling: touch;
+  overflow: auto;
+  max-height: 100000px;
 }
 
 .overflow-mask {
@@ -79,9 +82,7 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  -webkit-overflow-scrolling: touch;
-  overflow: auto;
-  max-height: 100000px;
+
 
   .one-up {
     animation: blink .6s infinite;
