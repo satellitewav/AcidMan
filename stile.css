@@ -15,7 +15,7 @@
     height: 34rem;
     text-align: center;
     padding: 0 0 0;
-    margin: 10rem 1rem 1rem;
+    margin: 5rem 1rem 1rem;
     border-radius: 3.5rem;
     transform-origin: bottom;
     transition: transform 200ms ease-in-out;
@@ -118,10 +118,12 @@ position: fixed;
 
 .testo {
     color: #231f20;
+    text-align: center;
 }
 
 .testoNero {
     color: #000000;
+    text-align: center;
 }
 
 .sottotitolo {
