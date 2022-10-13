@@ -6,6 +6,7 @@ class GameCoordinator {
     this.mazeImg = document.getElementById('maze-img');
     this.mazeCover = document.getElementById('maze-cover');
     this.pointsDisplay = document.getElementById('points-display');
+    this.nomeInsta = document.getElementById('nomeUtente');
     this.highScoreDisplay = document.getElementById('high-score-display');
     var highScore = "0";
     this.extraLivesDisplay = document.getElementById('extra-lives');
@@ -565,6 +566,13 @@ class GameCoordinator {
     this.pointsDisplay.innerHTML = '00';
     
     this.highScoreDisplay.innerHTML = record || '00';
+    var text=document.getElementById('name');
+    if(text.value == ""){
+      this.nomeInsta.innerHTML = "Partita locale";
+    }else{
+      this.nomeInsta.innerHTML = text.value + ":";
+    }
+  
     console.log(record);
     this.clearDisplay(this.fruitDisplay);
 
