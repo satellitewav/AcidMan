@@ -15,7 +15,7 @@
     height: 34rem;
     text-align: center;
     padding: 0 0 0;
-    margin: 5rem 1rem 1rem;
+    margin: 1rem 1rem 1rem;
     border-radius: 3.5rem;
     transform-origin: bottom;
     transition: transform 200ms ease-in-out;
@@ -80,7 +80,7 @@ th , tr {
     text-align: center;
     text-decoration: none;
     border-radius: 50%;
-    margin: 5rem 0rem 0rem;
+    margin: 3rem 0rem 0rem;
 }
   
   /* Add a hover effect if you want */
@@ -124,6 +124,12 @@ position: fixed;
 .testoNero {
     color: #000000;
     text-align: center;
+}
+
+.top5 {
+    color: #000000;
+    text-align: center;
+    margin: 7rem 0rem 0rem;
 }
 
 .sottotitolo {
