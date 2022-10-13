@@ -63,6 +63,31 @@ class GameCoordinator {
     this.xDown = null;                                                        
     this.yDown = null;
 
+/*
+    INIZIALIZZAZIONE DI TUTTI I SUONI DEL GIOCO
+*/
+
+    ostSnd = new Audio('/audio/ost.mp3');
+    deathSnd = new Audio('/audio/death.mp3');
+    dot_1Snd = new Audio('/audio/dot_1.mp3');
+    dot_2Snd = new Audio('/audio/dot_2.mp3');
+    eat_ghostSnd = new Audio('/audio/eat_ghost.mp3');
+    extra_lifeSnd = new Audio('/audio/extra_life.mp3');
+    eyesSnd = new Audio('/audio/eyes.mp3');
+    fruitSnd = new Audio('/audio/fruit.mp3');
+    game_startSnd = new Audio('/audio/game_start.mp3');
+    pauseSnd = new Audio('/audio/pause.mp3');
+    pause_beatSnd = new Audio('/audio/pause_beat.mp3');
+    power_upSnd = new Audio('/audio/power_up.mp3');
+    siren_1Snd = new Audio('/audio/siren_1.mp3');
+    siren_2Snd = new Audio('/audio/siren_2.mp3');
+    siren_2Snd = new Audio('/audio/siren_3.mp3');
+
+/*
+    FINE INIZIALIZZAZIONE DEI SUONI
+*/
+
+
     this.movementKeys = {
       // WASD
       87: 'up',
@@ -144,6 +169,12 @@ class GameCoordinator {
     return scale - 1;
   }
 
+
+
+
+
+
+
   /**
    * Reveals the game underneath the loading covers and starts gameplay
    */
@@ -192,6 +223,7 @@ class GameCoordinator {
           this.scaledTileSize * 2,
         );
         this.fruit.hideFruit();
+        this.salvaEdEsci.disabled = true;
   
         new Timer(() => {
           this.leftCover.style.left = '0';
