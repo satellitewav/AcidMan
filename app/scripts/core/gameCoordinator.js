@@ -12,8 +12,8 @@ class GameCoordinator {
     this.fruitDisplay = document.getElementById('fruit-display');
     this.mainMenu = document.getElementById('main-menu-container');
     this.gameStartButton = document.getElementById('game-start');
+    this.salvaEdEsci = document.getElementById('salva');
     this.pauseButton = document.getElementById('pause-button');
-    this.soundButton = document.getElementById('sound-button');
     this.leftCover = document.getElementById('left-cover');
     this.rightCover = document.getElementById('right-cover');
     this.pausedText = document.getElementById('paused-text');
@@ -91,15 +91,16 @@ class GameCoordinator {
       this.mazeArray[rowIndex] = row[0].split('');
     });
 
+    this.salvaEdEsci.addEventListener(
+      'click',
+      this.SalvaGioco.bind(this),
+    );
     this.gameStartButton.addEventListener(
       'click',
       this.startButtonClick.bind(this),
     );
     this.pauseButton.addEventListener('click', this.handlePauseKey.bind(this));
-    this.soundButton.addEventListener(
-      'click',
-      this.soundButtonClick.bind(this),
-    );
+
 
     const head = document.getElementsByTagName('head')[0];
     const link = document.createElement('link');
@@ -145,6 +146,69 @@ class GameCoordinator {
   /**
    * Reveals the game underneath the loading covers and starts gameplay
    */
+
+  SalvaGioco(){
+    this.allowPause = false;
+    this.cutscene = true;
+    this.soundManager.setCutscene(this.cutscene);
+    this.soundManager.stopAmbience();
+    this.removeTimer({ detail: { timer: this.fruitTimer } });
+    this.removeTimer({ detail: { timer: this.ghostCycleTimer } });
+    this.removeTimer({ detail: { timer: this.endIdleTimer } });
+    this.removeTimer({ detail: { timer: this.ghostFlashTimer } });
+
+    this.allowKeyPresses = false;
+    this.pacman.moving = false;
+    this.ghosts.forEach((ghost) => {
+      const ghostRef = ghost;
+      ghostRef.moving = false;
+    });
+
+    new Timer(() => {
+      this.ghosts.forEach((ghost) => {
+        const ghostRef = ghost;
+        ghostRef.display = false;
+      });
+      this.pacman.prepDeathAnimation();
+      this.soundManager.play('death');
+
+
+
+      var highScore = window.localStorage.getItem('highScore');
+      localStorage.setItem('highScore', highScore);
+      console.log(highScore);
+      assegnaPunteggio();
+  
+      new Timer(() => {
+        this.displayText(
+          {
+            left: this.scaledTileSize * 9,
+            top: this.scaledTileSize * 16.5,
+          },
+          'game_over',
+          4000,
+          this.scaledTileSize * 10,
+          this.scaledTileSize * 2,
+        );
+        this.fruit.hideFruit();
+  
+        new Timer(() => {
+          this.leftCover.style.left = '0';
+          this.rightCover.style.right = '0';
+  
+          setTimeout(() => {
+            this.mainMenu.style.opacity = 1;
+            this.gameStartButton.disabled = false;
+            location.reload();
+          }, 1000);
+        }, 2500);
+      }, 2250);
+
+
+
+    }, 750);
+  }
+  
   startButtonClick() {
     controlloUtente();
     this.gameStartButton.disabled = true;
@@ -176,19 +240,12 @@ class GameCoordinator {
   /**
    * Toggles the master volume for the soundManager, and saves the preference to storage
    */
-  soundButtonClick() {
-    const newVolume = this.soundManager.masterVolume === 1 ? 0 : 1;
-    this.soundManager.setMasterVolume(newVolume);
-    localStorage.setItem('volumePreference', newVolume);
-    this.setSoundButtonIcon(newVolume);
-  }
+
 
   /**
    * Sets the icon for the sound button
    */
-  setSoundButtonIcon(newVolume) {
-    this.soundButton.innerHTML = newVolume === 0 ? 'volume_off' : 'volume_up';
-  }
+
 
   /**
    * Displays an error message in the event assets are unable to download
@@ -515,7 +572,6 @@ class GameCoordinator {
       localStorage.getItem('volumePreference') || 1,
       10,
     );
-    this.setSoundButtonIcon(volumePreference);
     this.soundManager.setMasterVolume(volumePreference);
   }
 
@@ -797,7 +853,6 @@ class GameCoordinator {
       this.handlePauseKey();
     } else if (e.keyCode === 81) {
       // Q
-      this.soundButtonClick();
     } else if (this.movementKeys[e.keyCode]) {
       this.changeDirection(this.movementKeys[e.keyCode]);
     }
@@ -852,9 +907,8 @@ class GameCoordinator {
     var highScore = window.localStorage.getItem('highScore');
     if (this.points > (highScore || 0)) {
       highScore = this.points;
-      highScoreDisplay.innerText = this.points;
+      this.highScoreDisplay.innerText = highScore;
       localStorage.setItem('highScore', highScore);
-      console.log(highScore);
     }
 
     if (this.points >= 10000 && !this.extraLifeGiven) {
@@ -941,6 +995,7 @@ class GameCoordinator {
     var highScore = window.localStorage.getItem('highScore');
     localStorage.setItem('highScore', highScore);
     console.log(highScore);
+    assegnaPunteggio();
 
     new Timer(() => {
       this.displayText(
@@ -962,7 +1017,7 @@ class GameCoordinator {
         setTimeout(() => {
           this.mainMenu.style.opacity = 1;
           this.gameStartButton.disabled = false;
-          this.mainMenu.style.visibility = 'visible';
+          location.reload();
         }, 1000);
       }, 2500);
     }, 2250);
@@ -1342,6 +1397,54 @@ async function controlloUtente() {
   }
 
 }
+
+async function assegnaPunteggio() {
+  // Make the initial query
+
+  var hiscore = window.localStorage.getItem('highScore');
+  var text=document.getElementById('name');
+  var x = parseInt(hiscore);
+
+  const query = await db.collection("players").where("name", "==", text.value).get();
+
+  if (!query.empty) {
+      const snapshot = query.docs[0];
+      const data = snapshot.data();
+      let migliore  = `${data.score}`;
+      console.log("Nome", text.value, "punteggio", hiscore, "cloud", migliore, "x", x);
+      if (x > migliore){
+          console.log("Miglior punteggio superato");
+          db.collection("players").where("name", "==", text.value)
+          .get()
+          .then((querySnapshot) => {
+              querySnapshot.forEach((doc) => {
+              // doc.data() is never undefined for query doc snapshots
+                  db.collection("players").doc(doc.id).update({
+                      score: x,
+                  })
+                  console.log("Dati precedenti aggiornati");
+              });
+          })
+      }else{
+          console.log("Miglior punteggio non superato");
+      }
+  } else {
+      if( document.getElementById("name").value != ''){
+          db.collection("players").add({
+              name: text.value,
+              score: x,
+          })
+          .then((docRef) => {
+              console.log("Document written with ID: ", docRef.id);
+          })
+          .catch((error) => {
+          console.error("Error adding document: ", error);
+          });
+      } 
+      console.log("Nuovo utente, assegno nome", text.value, "e punteggio ", hiscore);
+  }
+}
+
 
 
 // removeIf(production)
