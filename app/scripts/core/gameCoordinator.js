@@ -67,6 +67,22 @@ class GameCoordinator {
     INIZIALIZZAZIONE DI TUTTI I SUONI DEL GIOCO
 */
 
+    var ostSnd,
+        deathSnd,
+        dot_1Snd,
+        dot_2Snd,
+        eat_ghostSnd,
+        extra_lifeSnd,
+        eyesSnd,
+        fruitSnd,
+        game_startSnd,
+        pauseSnd,
+        pause_beatSnd,
+        power_upSnd,
+        siren_1Snd,
+        siren_2Snd,
+        siren_3Snd;
+
     ostSnd = new Audio('/audio/ost.mp3');
     deathSnd = new Audio('/audio/death.mp3');
     dot_1Snd = new Audio('/audio/dot_1.mp3');
@@ -81,7 +97,7 @@ class GameCoordinator {
     power_upSnd = new Audio('/audio/power_up.mp3');
     siren_1Snd = new Audio('/audio/siren_1.mp3');
     siren_2Snd = new Audio('/audio/siren_2.mp3');
-    siren_2Snd = new Audio('/audio/siren_3.mp3');
+    siren_3Snd = new Audio('/audio/siren_3.mp3');
 
 /*
     FINE INIZIALIZZAZIONE DEI SUONI
