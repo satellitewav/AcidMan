@@ -14,7 +14,6 @@ class GameCoordinator {
     this.mainMenu = document.getElementById('main-menu-container');
     this.gameStartButton = document.getElementById('game-start');
     this.salvaEdEsci = document.getElementById('salva');
-    this.pauseButton = document.getElementById('pause-button');
     this.leftCover = document.getElementById('left-cover');
     this.rightCover = document.getElementById('right-cover');
     this.pausedText = document.getElementById('paused-text');
@@ -103,7 +102,7 @@ class GameCoordinator {
       'click',
       this.startButtonClick.bind(this),
     );
-    this.pauseButton.addEventListener('click', this.handlePauseKey.bind(this));
+  
 
 
     const head = document.getElementsByTagName('head')[0];
@@ -678,7 +677,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
   startGameplay(initialStart) {
     if (initialStart) {
       var ost;
-      ost = new Audio('/audio/game_start.mp3');
+      ost = new Audio('/audio/ost.mp3');
       ost.play();
       ost.loop = true;
     }
@@ -898,7 +897,6 @@ FINE INIZIALIZZAZIONE DEI SUONI
 
       this.gameEngine.changePausedState(this.gameEngine.running);
 
-      ost.pause();
       const audioCtx = new AudioContext();
       const pause = new Audio("audio/pause.mp3");
       const pauseSnd = audioCtx.createMediaElementSource(pause);
