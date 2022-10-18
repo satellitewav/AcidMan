@@ -677,7 +677,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
   startGameplay(initialStart) {
     if (initialStart) {
       var ost;
-      ost = new Audio('/audio/ost.mp3');
+      ost = new Audio('/pacman-firebase/audio/ost.mp3');
       ost.play();
       ost.loop = true;
     }
