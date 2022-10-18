@@ -389,9 +389,6 @@ FINE INIZIALIZZAZIONE DEI SUONI
         `${audioBase}game_start.mp3`,
         `${audioBase}pause.mp3`,
         `${audioBase}pause_beat.mp3`,
-        `${audioBase}siren_1.mp3`,
-        `${audioBase}siren_2.mp3`,
-        `${audioBase}siren_3.mp3`,
         `${audioBase}power_up.mp3`,
         `${audioBase}extra_life.mp3`,
         `${audioBase}eyes.mp3`,
@@ -1119,7 +1116,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
       sirenNum = 3;
     }
 
-    return `siren_${sirenNum}`;
+    return;
   }
 
   /**
