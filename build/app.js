@@ -1108,6 +1108,207 @@ class Pacman {
 }
 
 
+class Pickup {
+  constructor(type, scaledTileSize, column, row, pacman, mazeDiv, points) {
+    this.type = type;
+    this.pacman = pacman;
+    this.mazeDiv = mazeDiv;
+    this.points = points;
+    this.nearPacman = false;
+
+    this.fruitImages = {
+      100: 'cherry',
+      300: 'strawberry',
+      500: 'orange',
+      700: 'apple',
+      1000: 'melon',
+      2000: 'galaxian',
+      3000: 'bell',
+      5000: 'key',
+    };
+
+    this.setStyleMeasurements(type, scaledTileSize, column, row, points);
+  }
+
+  /**
+   * Resets the pickup's visibility
+   */
+  reset() {
+    this.animationTarget.style.visibility = (this.type === 'fruit')
+      ? 'hidden' : 'visible';
+  }
+
+  /**
+   * Sets various style measurements for the pickup depending on its type
+   * @param {('pacdot'|'powerPellet'|'fruit')} type - The classification of pickup
+   * @param {number} scaledTileSize
+   * @param {number} column
+   * @param {number} row
+   * @param {number} points
+   */
+  setStyleMeasurements(type, scaledTileSize, column, row, points) {
+    if (type === 'pacdot') {
+      this.size = scaledTileSize * 0.25;
+      this.x = (column * scaledTileSize) + ((scaledTileSize / 8) * 3);
+      this.y = (row * scaledTileSize) + ((scaledTileSize / 8) * 3);
+    } else if (type === 'powerPellet') {
+      this.size = scaledTileSize;
+      this.x = (column * scaledTileSize);
+      this.y = (row * scaledTileSize);
+    } else {
+      this.size = scaledTileSize * 2;
+      this.x = (column * scaledTileSize) - (scaledTileSize * 0.5);
+      this.y = (row * scaledTileSize) - (scaledTileSize * 0.5);
+    }
+
+    this.center = {
+      x: column * scaledTileSize,
+      y: row * scaledTileSize,
+    };
+
+    this.animationTarget = document.createElement('div');
+    this.animationTarget.style.position = 'absolute';
+    this.animationTarget.style.backgroundSize = `${this.size}px`;
+    this.animationTarget.style.backgroundImage = this.determineImage(
+      type, points,
+    );
+    this.animationTarget.style.height = `${this.size}px`;
+    this.animationTarget.style.width = `${this.size}px`;
+    this.animationTarget.style.top = `${this.y}px`;
+    this.animationTarget.style.left = `${this.x}px`;
+    this.mazeDiv.appendChild(this.animationTarget);
+
+    if (type === 'powerPellet') {
+      this.animationTarget.classList.add('power-pellet');
+    }
+
+    this.reset();
+  }
+
+  /**
+   * Determines the Pickup image based on type and point value
+   * @param {('pacdot'|'powerPellet'|'fruit')} type - The classification of pickup
+   * @param {Number} points
+   * @returns {String}
+   */
+  determineImage(type, points) {
+    let image = '';
+
+    if (type === 'fruit') {
+      image = this.fruitImages[points] || 'cherry';
+    } else {
+      image = type;
+    }
+
+    return `url(app/style/graphics/spriteSheets/pickups/${image}.svg)`;
+  }
+
+  /**
+   * Shows a bonus fruit, resetting its point value and image
+   * @param {number} points
+   */
+  showFruit(points) {
+    this.points = points;
+    this.animationTarget.style.backgroundImage = this.determineImage(
+      this.type, points,
+    );
+    this.animationTarget.style.visibility = 'visible';
+  }
+
+  /**
+   * Makes the fruit invisible (happens if Pacman was too slow)
+   */
+  hideFruit() {
+    this.animationTarget.style.visibility = 'hidden';
+  }
+
+  /**
+   * Returns true if the Pickup is touching a bounding box at Pacman's center
+   * @param {({ x: number, y: number, size: number})} pickup
+   * @param {({ x: number, y: number, size: number})} originalPacman
+   */
+  checkForCollision(pickup, originalPacman) {
+    const pacman = Object.assign({}, originalPacman);
+
+    pacman.x += (pacman.size * 0.25);
+    pacman.y += (pacman.size * 0.25);
+    pacman.size /= 2;
+
+    return (pickup.x < pacman.x + pacman.size
+      && pickup.x + pickup.size > pacman.x
+      && pickup.y < pacman.y + pacman.size
+      && pickup.y + pickup.size > pacman.y);
+  }
+
+  /**
+   * Checks to see if the pickup is close enough to Pacman to be considered for collision detection
+   * @param {number} maxDistance - The maximum distance Pacman can travel per cycle
+   * @param {({ x:number, y:number })} pacmanCenter - The center of Pacman's hitbox
+   * @param {Boolean} debugging - Flag to change the appearance of pickups for testing
+   */
+  checkPacmanProximity(maxDistance, pacmanCenter, debugging) {
+    if (this.animationTarget.style.visibility !== 'hidden') {
+      const distance = Math.sqrt(
+        ((this.center.x - pacmanCenter.x) ** 2)
+        + ((this.center.y - pacmanCenter.y) ** 2),
+      );
+
+      this.nearPacman = (distance <= maxDistance);
+
+      if (debugging) {
+        this.animationTarget.style.background = this.nearPacman
+          ? 'lime' : 'red';
+      }
+    }
+  }
+
+  /**
+   * Checks if the pickup is visible and close to Pacman
+   * @returns {Boolean}
+   */
+  shouldCheckForCollision() {
+    return this.animationTarget.style.visibility !== 'hidden'
+      && this.nearPacman;
+  }
+
+  /**
+   * If the Pickup is still visible, it checks to see if it is colliding with Pacman.
+   * It will turn itself invisible and cease collision-detection after the first
+   * collision with Pacman.
+   */
+  update() {
+    if (this.shouldCheckForCollision()) {
+      if (this.checkForCollision(
+        {
+          x: this.x,
+          y: this.y,
+          size: this.size,
+        }, {
+          x: this.pacman.position.left,
+          y: this.pacman.position.top,
+          size: this.pacman.measurement,
+        },
+      )) {
+        this.animationTarget.style.visibility = 'hidden';
+        window.dispatchEvent(new CustomEvent('awardPoints', {
+          detail: {
+            points: this.points,
+            type: this.type,
+          },
+        }));
+
+        if (this.type === 'pacdot') {
+          window.dispatchEvent(new Event('dotEaten'));
+        } else if (this.type === 'powerPellet') {
+          window.dispatchEvent(new Event('dotEaten'));
+          window.dispatchEvent(new Event('powerUp'));
+        }
+      }
+    }
+  }
+}
+
+
 class GameCoordinator {
   constructor() {
     this.gameUi = document.getElementById('game-ui');
@@ -1270,8 +1471,7 @@ class GameCoordinator {
   SalvaGioco(){
     this.allowPause = false;
     this.cutscene = true;
-    this.soundManager.setCutscene(this.cutscene);
-    this.soundManager.stopAmbience();
+
     this.removeTimer({ detail: { timer: this.fruitTimer } });
     this.removeTimer({ detail: { timer: this.ghostCycleTimer } });
     this.removeTimer({ detail: { timer: this.endIdleTimer } });
@@ -1290,13 +1490,8 @@ class GameCoordinator {
         ghostRef.display = false;
       });
       this.pacman.prepDeathAnimation();
-//      this.soundManager.play('death');
 
-    const audioCtx = new AudioContext();
-    const death = new Audio("audio/death.mp3");
-    const deathSnd = audioCtx.createMediaElementSource(death);
-    deathSnd.connect(audioCtx.destination);
-    death.play();
+
 
 
 
@@ -1337,7 +1532,6 @@ class GameCoordinator {
   }
   
   startButtonClick() {
-    this.initSuoni();
     controlloUtente();
     this.gameStartButton.disabled = true;
     this.oraInizia();
@@ -1347,62 +1541,6 @@ class GameCoordinator {
     INIZIALIZZAZIONE DI TUTTI I SUONI DEL GIOCO
 */
 
-initSuoni(){
-  const audioCtx = new AudioContext();
-
-  const dot_1 = new Audio("audio/dot_1.mp3");
-  const dot_1Snd = audioCtx.createMediaElementSource(dot_1);
-  dot_1Snd.connect(audioCtx.destination);
-
-  const dot_2 = new Audio("audio/dot_2.mp3");
-  const dot_2Snd = audioCtx.createMediaElementSource(dot_2);
-  dot_2Snd.connect(audioCtx.destination);
-
-  const eat_ghost = new Audio("audio/eat_ghost.mp3");
-  const eat_ghostSnd = audioCtx.createMediaElementSource(eat_ghost);
-  eat_ghostSnd.connect(audioCtx.destination);
-
-  const extra_life = new Audio("audio/extra_life.mp3");
-  const extra_lifeSnd = audioCtx.createMediaElementSource(extra_life);
-  extra_lifeSnd.connect(audioCtx.destination);
-
-  const eyes = new Audio("audio/eyes.mp3");
-  const eyesSnd = audioCtx.createMediaElementSource(eyes);
-  eyesSnd.connect(audioCtx.destination);
-
-  const fruit = new Audio("audio/fruit.mp3");
-  const fruitSnd = audioCtx.createMediaElementSource(fruit);
-  fruitSnd.connect(audioCtx.destination);
-
-  const game_start = new Audio("audio/game_start.mp3");
-  const game_startSnd = audioCtx.createMediaElementSource(game_start);
-  game_startSnd.connect(audioCtx.destination);
-
-  const pause = new Audio("audio/pause.mp3");
-  const pauseSnd = audioCtx.createMediaElementSource(pause);
-  pauseSnd.connect(audioCtx.destination);
-  
-
-  const pause_beat = new Audio("audio/pause_beat.mp3");
-  const pause_beatSnd = audioCtx.createMediaElementSource(pause_beat);
-  pause_beatSnd.connect(audioCtx.destination);
-
-  const power_up = new Audio("audio/power_up.mp3");
-  const power_upSnd = audioCtx.createMediaElementSource(power_up);
-  power_upSnd.connect(audioCtx.destination);
-
-  const siren_1 = new Audio("audio/siren_1.mp3");
-  const siren_1Snd = audioCtx.createMediaElementSource(siren_1);
-  siren_1Snd.connect(audioCtx.destination);
-
-  const siren_2 = new Audio("audio/siren_2.mp3");
-  const siren_2Snd = audioCtx.createMediaElementSource(siren_2);
-  siren_2Snd.connect(audioCtx.destination);
-
-  const siren_3 = new Audio("audio/siren_3.mp3");
-  const siren_3Snd = audioCtx.createMediaElementSource(siren_3);
-  siren_3Snd.connect(audioCtx.destination);
-}
 
 
 /*
@@ -1738,7 +1876,6 @@ FINE INIZIALIZZAZIONE DEI SUONI
 
     if (this.firstGame) {
       this.drawMaze(this.mazeArray, this.entityList);
-      this.soundManager = new SoundManager();
       this.setUiDimensions();
     } else {
       this.pacman.reset();
@@ -1773,7 +1910,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
       localStorage.getItem('volumePreference') || 1,
       10,
     );
-    this.soundManager.setMasterVolume(volumePreference);
+
   }
 
   /**
@@ -1854,11 +1991,10 @@ FINE INIZIALIZZAZIONE DEI SUONI
    */
   startGameplay(initialStart) {
     if (initialStart) {
-      const audioCtx = new AudioContext();
-      const game_start = new Audio("audio/game_start.mp3");
-      const game_startSnd = audioCtx.createMediaElementSource(game_start);
-      game_startSnd.connect(audioCtx.destination);
-      game_start.play();
+      var ost;
+      ost = new Audio('/audio/game_start.mp3');
+      ost.play();
+      ost.loop = true;
     }
 
     this.scaredGhosts = [];
@@ -1877,8 +2013,6 @@ FINE INIZIALIZZAZIONE DEI SUONI
     new Timer(() => {
       this.allowPause = true;
       this.cutscene = false;
-      this.soundManager.setCutscene(this.cutscene);
-      this.soundManager.setAmbience(this.determineSiren(this.remainingDots));
 
       this.allowPacmanMovement = true;
       this.pacman.moving = true;
@@ -2078,6 +2212,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
 
       this.gameEngine.changePausedState(this.gameEngine.running);
 
+      ost.pause();
       const audioCtx = new AudioContext();
       const pause = new Audio("audio/pause.mp3");
       const pauseSnd = audioCtx.createMediaElementSource(pause);
@@ -2085,17 +2220,16 @@ FINE INIZIALIZZAZIONE DEI SUONI
       pause.play();
 
       if (this.gameEngine.started) {
-        this.soundManager.resumeAmbience();
         this.gameUi.style.filter = 'unset';
         this.movementButtons.style.filter = 'unset';
         this.pausedText.style.visibility = 'hidden';
         this.pauseButton.innerHTML = 'pause';
         this.activeTimers.forEach((timer) => {
           timer.resume();
+          ost.play();
         });
       } else {
-        this.soundManager.stopAmbience();
-        this.soundManager.setAmbience('pause_beat', true);
+
         this.gameUi.style.filter = 'blur(5px)';
         this.movementButtons.style.filter = 'blur(5px)';
         this.pausedText.style.visibility = 'visible';
@@ -2124,11 +2258,6 @@ FINE INIZIALIZZAZIONE DEI SUONI
     if (this.points >= 10000 && !this.extraLifeGiven) {
       this.extraLifeGiven = true;
 
-      const audioCtx = new AudioContext();
-      const extra_life = new Audio("audio/extra_life.mp3");
-      const extra_lifeSnd = audioCtx.createMediaElementSource(extra_life);
-      extra_lifeSnd.connect(audioCtx.destination);
-      extra_life.play();
 
       this.lives += 1;
       this.updateExtraLivesDisplay();
@@ -2145,13 +2274,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
       const height = this.scaledTileSize * 2;
 
       this.displayText({ left, top }, e.detail.points, 2000, width, height);
-//      this.soundManager.play('fruit');
 
-      const audioCtx = new AudioContext();
-      const fruit = new Audio("audio/fruit.mp3");
-      const fruitSnd = audioCtx.createMediaElementSource(fruit);
-      fruitSnd.connect(audioCtx.destination);
-      fruit.play();
 
       this.updateFruitDisplay(
         this.fruit.determineImage('fruit', e.detail.points),
@@ -2166,8 +2289,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
   deathSequence() {
     this.allowPause = false;
     this.cutscene = true;
-    this.soundManager.setCutscene(this.cutscene);
-    this.soundManager.stopAmbience();
+
     this.removeTimer({ detail: { timer: this.fruitTimer } });
     this.removeTimer({ detail: { timer: this.ghostCycleTimer } });
     this.removeTimer({ detail: { timer: this.endIdleTimer } });
@@ -2187,13 +2309,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
       });
       this.pacman.prepDeathAnimation();
 
-      const audioCtx = new AudioContext();
-      const death = new Audio("audio/death.mp3");
-      const deathSnd = audioCtx.createMediaElementSource(death);
-      deathSnd.connect(audioCtx.destination);
-      death.play();
 
-//      this.soundManager.play('death');
 
       if (this.lives > 0) {
         this.lives -= 1;
@@ -2259,7 +2375,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
   dotEaten() {
     this.remainingDots -= 1;
 
-    this.soundManager.playDotSound();
+
 
 
 
@@ -2294,7 +2410,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
     this.blinky.speedUp();
 
     if (this.scaredGhosts.length === 0 && this.eyeGhosts === 0) {
-      this.soundManager.setAmbience(this.determineSiren(this.remainingDots));
+
     }
   }
 
@@ -2323,9 +2439,9 @@ FINE INIZIALIZZAZIONE DEI SUONI
   advanceLevel() {
     this.allowPause = false;
     this.cutscene = true;
-    this.soundManager.setCutscene(this.cutscene);
+
     this.allowKeyPresses = false;
-    this.soundManager.stopAmbience();
+
 
     this.entityList.forEach((entity) => {
       const entityRef = entity;
@@ -2401,7 +2517,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
       });
       this.scaredGhosts = [];
       if (this.eyeGhosts === 0) {
-        this.soundManager.setAmbience(this.determineSiren(this.remainingDots));
+
       }
     } else if (this.scaredGhosts.length > 0) {
       this.scaredGhosts.forEach((ghost) => {
@@ -2419,12 +2535,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
    */
   powerUp() {
     if (this.remainingDots !== 0) {
-    //  this.soundManager.setAmbience('power_up');
-    const audioCtx = new AudioContext();
-    const power_up = new Audio("audio/power_up.mp3");
-    const power_upSnd = audioCtx.createMediaElementSource(power_up);
-    power_upSnd.connect(audioCtx.destination);
-    power_up.play();
+
     }
 
     this.removeTimer({ detail: { timer: this.ghostFlashTimer } });
@@ -2466,12 +2577,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
     this.pauseTimer({ detail: { timer: this.ghostFlashTimer } });
     this.pauseTimer({ detail: { timer: this.ghostCycleTimer } });
     this.pauseTimer({ detail: { timer: this.fruitTimer } });
-    // this.soundManager.play('eat_ghost');
-    const audioCtx = new AudioContext();
-    const eat_ghost = new Audio("audio/eat_ghost.mp3");
-    const eat_ghostSnd = audioCtx.createMediaElementSource(eat_ghost);
-    eat_ghostSnd.connect(audioCtx.destination);
-    eat_ghost.play();
+
 
     this.scaredGhosts = this.scaredGhosts.filter(
       ghost => ghost.name !== e.detail.ghost.name,
@@ -2503,7 +2609,6 @@ FINE INIZIALIZZAZIONE DEI SUONI
     });
 
     new Timer(() => {
-      this.soundManager.setAmbience('eyes');
 
       this.resumeTimer({ detail: { timer: this.ghostFlashTimer } });
       this.resumeTimer({ detail: { timer: this.ghostCycleTimer } });
@@ -2532,7 +2637,6 @@ FINE INIZIALIZZAZIONE DEI SUONI
       const sound = this.scaredGhosts.length > 0
         ? 'power_up'
         : this.determineSiren(this.remainingDots);
-      this.soundManager.setAmbience(sound);
     }
   }
 
@@ -3313,207 +3417,6 @@ class Timer {
             timer: this,
           },
         }));
-      }
-    }
-  }
-}
-
-
-class Pickup {
-  constructor(type, scaledTileSize, column, row, pacman, mazeDiv, points) {
-    this.type = type;
-    this.pacman = pacman;
-    this.mazeDiv = mazeDiv;
-    this.points = points;
-    this.nearPacman = false;
-
-    this.fruitImages = {
-      100: 'cherry',
-      300: 'strawberry',
-      500: 'orange',
-      700: 'apple',
-      1000: 'melon',
-      2000: 'galaxian',
-      3000: 'bell',
-      5000: 'key',
-    };
-
-    this.setStyleMeasurements(type, scaledTileSize, column, row, points);
-  }
-
-  /**
-   * Resets the pickup's visibility
-   */
-  reset() {
-    this.animationTarget.style.visibility = (this.type === 'fruit')
-      ? 'hidden' : 'visible';
-  }
-
-  /**
-   * Sets various style measurements for the pickup depending on its type
-   * @param {('pacdot'|'powerPellet'|'fruit')} type - The classification of pickup
-   * @param {number} scaledTileSize
-   * @param {number} column
-   * @param {number} row
-   * @param {number} points
-   */
-  setStyleMeasurements(type, scaledTileSize, column, row, points) {
-    if (type === 'pacdot') {
-      this.size = scaledTileSize * 0.25;
-      this.x = (column * scaledTileSize) + ((scaledTileSize / 8) * 3);
-      this.y = (row * scaledTileSize) + ((scaledTileSize / 8) * 3);
-    } else if (type === 'powerPellet') {
-      this.size = scaledTileSize;
-      this.x = (column * scaledTileSize);
-      this.y = (row * scaledTileSize);
-    } else {
-      this.size = scaledTileSize * 2;
-      this.x = (column * scaledTileSize) - (scaledTileSize * 0.5);
-      this.y = (row * scaledTileSize) - (scaledTileSize * 0.5);
-    }
-
-    this.center = {
-      x: column * scaledTileSize,
-      y: row * scaledTileSize,
-    };
-
-    this.animationTarget = document.createElement('div');
-    this.animationTarget.style.position = 'absolute';
-    this.animationTarget.style.backgroundSize = `${this.size}px`;
-    this.animationTarget.style.backgroundImage = this.determineImage(
-      type, points,
-    );
-    this.animationTarget.style.height = `${this.size}px`;
-    this.animationTarget.style.width = `${this.size}px`;
-    this.animationTarget.style.top = `${this.y}px`;
-    this.animationTarget.style.left = `${this.x}px`;
-    this.mazeDiv.appendChild(this.animationTarget);
-
-    if (type === 'powerPellet') {
-      this.animationTarget.classList.add('power-pellet');
-    }
-
-    this.reset();
-  }
-
-  /**
-   * Determines the Pickup image based on type and point value
-   * @param {('pacdot'|'powerPellet'|'fruit')} type - The classification of pickup
-   * @param {Number} points
-   * @returns {String}
-   */
-  determineImage(type, points) {
-    let image = '';
-
-    if (type === 'fruit') {
-      image = this.fruitImages[points] || 'cherry';
-    } else {
-      image = type;
-    }
-
-    return `url(app/style/graphics/spriteSheets/pickups/${image}.svg)`;
-  }
-
-  /**
-   * Shows a bonus fruit, resetting its point value and image
-   * @param {number} points
-   */
-  showFruit(points) {
-    this.points = points;
-    this.animationTarget.style.backgroundImage = this.determineImage(
-      this.type, points,
-    );
-    this.animationTarget.style.visibility = 'visible';
-  }
-
-  /**
-   * Makes the fruit invisible (happens if Pacman was too slow)
-   */
-  hideFruit() {
-    this.animationTarget.style.visibility = 'hidden';
-  }
-
-  /**
-   * Returns true if the Pickup is touching a bounding box at Pacman's center
-   * @param {({ x: number, y: number, size: number})} pickup
-   * @param {({ x: number, y: number, size: number})} originalPacman
-   */
-  checkForCollision(pickup, originalPacman) {
-    const pacman = Object.assign({}, originalPacman);
-
-    pacman.x += (pacman.size * 0.25);
-    pacman.y += (pacman.size * 0.25);
-    pacman.size /= 2;
-
-    return (pickup.x < pacman.x + pacman.size
-      && pickup.x + pickup.size > pacman.x
-      && pickup.y < pacman.y + pacman.size
-      && pickup.y + pickup.size > pacman.y);
-  }
-
-  /**
-   * Checks to see if the pickup is close enough to Pacman to be considered for collision detection
-   * @param {number} maxDistance - The maximum distance Pacman can travel per cycle
-   * @param {({ x:number, y:number })} pacmanCenter - The center of Pacman's hitbox
-   * @param {Boolean} debugging - Flag to change the appearance of pickups for testing
-   */
-  checkPacmanProximity(maxDistance, pacmanCenter, debugging) {
-    if (this.animationTarget.style.visibility !== 'hidden') {
-      const distance = Math.sqrt(
-        ((this.center.x - pacmanCenter.x) ** 2)
-        + ((this.center.y - pacmanCenter.y) ** 2),
-      );
-
-      this.nearPacman = (distance <= maxDistance);
-
-      if (debugging) {
-        this.animationTarget.style.background = this.nearPacman
-          ? 'lime' : 'red';
-      }
-    }
-  }
-
-  /**
-   * Checks if the pickup is visible and close to Pacman
-   * @returns {Boolean}
-   */
-  shouldCheckForCollision() {
-    return this.animationTarget.style.visibility !== 'hidden'
-      && this.nearPacman;
-  }
-
-  /**
-   * If the Pickup is still visible, it checks to see if it is colliding with Pacman.
-   * It will turn itself invisible and cease collision-detection after the first
-   * collision with Pacman.
-   */
-  update() {
-    if (this.shouldCheckForCollision()) {
-      if (this.checkForCollision(
-        {
-          x: this.x,
-          y: this.y,
-          size: this.size,
-        }, {
-          x: this.pacman.position.left,
-          y: this.pacman.position.top,
-          size: this.pacman.measurement,
-        },
-      )) {
-        this.animationTarget.style.visibility = 'hidden';
-        window.dispatchEvent(new CustomEvent('awardPoints', {
-          detail: {
-            points: this.points,
-            type: this.type,
-          },
-        }));
-
-        if (this.type === 'pacdot') {
-          window.dispatchEvent(new Event('dotEaten'));
-        } else if (this.type === 'powerPellet') {
-          window.dispatchEvent(new Event('dotEaten'));
-          window.dispatchEvent(new Event('powerUp'));
-        }
       }
     }
   }

@@ -160,8 +160,7 @@ class GameCoordinator {
   SalvaGioco(){
     this.allowPause = false;
     this.cutscene = true;
-    this.soundManager.setCutscene(this.cutscene);
-    this.soundManager.stopAmbience();
+
     this.removeTimer({ detail: { timer: this.fruitTimer } });
     this.removeTimer({ detail: { timer: this.ghostCycleTimer } });
     this.removeTimer({ detail: { timer: this.endIdleTimer } });
@@ -180,13 +179,8 @@ class GameCoordinator {
         ghostRef.display = false;
       });
       this.pacman.prepDeathAnimation();
-//      this.soundManager.play('death');
 
-    const audioCtx = new AudioContext();
-    const death = new Audio("audio/death.mp3");
-    const deathSnd = audioCtx.createMediaElementSource(death);
-    deathSnd.connect(audioCtx.destination);
-    death.play();
+
 
 
 
@@ -227,7 +221,6 @@ class GameCoordinator {
   }
   
   startButtonClick() {
-    this.initSuoni();
     controlloUtente();
     this.gameStartButton.disabled = true;
     this.oraInizia();
@@ -237,62 +230,6 @@ class GameCoordinator {
     INIZIALIZZAZIONE DI TUTTI I SUONI DEL GIOCO
 */
 
-initSuoni(){
-  const audioCtx = new AudioContext();
-
-  const dot_1 = new Audio("audio/dot_1.mp3");
-  const dot_1Snd = audioCtx.createMediaElementSource(dot_1);
-  dot_1Snd.connect(audioCtx.destination);
-
-  const dot_2 = new Audio("audio/dot_2.mp3");
-  const dot_2Snd = audioCtx.createMediaElementSource(dot_2);
-  dot_2Snd.connect(audioCtx.destination);
-
-  const eat_ghost = new Audio("audio/eat_ghost.mp3");
-  const eat_ghostSnd = audioCtx.createMediaElementSource(eat_ghost);
-  eat_ghostSnd.connect(audioCtx.destination);
-
-  const extra_life = new Audio("audio/extra_life.mp3");
-  const extra_lifeSnd = audioCtx.createMediaElementSource(extra_life);
-  extra_lifeSnd.connect(audioCtx.destination);
-
-  const eyes = new Audio("audio/eyes.mp3");
-  const eyesSnd = audioCtx.createMediaElementSource(eyes);
-  eyesSnd.connect(audioCtx.destination);
-
-  const fruit = new Audio("audio/fruit.mp3");
-  const fruitSnd = audioCtx.createMediaElementSource(fruit);
-  fruitSnd.connect(audioCtx.destination);
-
-  const game_start = new Audio("audio/game_start.mp3");
-  const game_startSnd = audioCtx.createMediaElementSource(game_start);
-  game_startSnd.connect(audioCtx.destination);
-
-  const pause = new Audio("audio/pause.mp3");
-  const pauseSnd = audioCtx.createMediaElementSource(pause);
-  pauseSnd.connect(audioCtx.destination);
-  
-
-  const pause_beat = new Audio("audio/pause_beat.mp3");
-  const pause_beatSnd = audioCtx.createMediaElementSource(pause_beat);
-  pause_beatSnd.connect(audioCtx.destination);
-
-  const power_up = new Audio("audio/power_up.mp3");
-  const power_upSnd = audioCtx.createMediaElementSource(power_up);
-  power_upSnd.connect(audioCtx.destination);
-
-  const siren_1 = new Audio("audio/siren_1.mp3");
-  const siren_1Snd = audioCtx.createMediaElementSource(siren_1);
-  siren_1Snd.connect(audioCtx.destination);
-
-  const siren_2 = new Audio("audio/siren_2.mp3");
-  const siren_2Snd = audioCtx.createMediaElementSource(siren_2);
-  siren_2Snd.connect(audioCtx.destination);
-
-  const siren_3 = new Audio("audio/siren_3.mp3");
-  const siren_3Snd = audioCtx.createMediaElementSource(siren_3);
-  siren_3Snd.connect(audioCtx.destination);
-}
 
 
 /*
@@ -628,7 +565,6 @@ FINE INIZIALIZZAZIONE DEI SUONI
 
     if (this.firstGame) {
       this.drawMaze(this.mazeArray, this.entityList);
-      this.soundManager = new SoundManager();
       this.setUiDimensions();
     } else {
       this.pacman.reset();
@@ -663,7 +599,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
       localStorage.getItem('volumePreference') || 1,
       10,
     );
-    this.soundManager.setMasterVolume(volumePreference);
+
   }
 
   /**
@@ -744,11 +680,10 @@ FINE INIZIALIZZAZIONE DEI SUONI
    */
   startGameplay(initialStart) {
     if (initialStart) {
-      const audioCtx = new AudioContext();
-      const game_start = new Audio("audio/game_start.mp3");
-      const game_startSnd = audioCtx.createMediaElementSource(game_start);
-      game_startSnd.connect(audioCtx.destination);
-      game_start.play();
+      var ost;
+      ost = new Audio('/audio/game_start.mp3');
+      ost.play();
+      ost.loop = true;
     }
 
     this.scaredGhosts = [];
@@ -767,8 +702,6 @@ FINE INIZIALIZZAZIONE DEI SUONI
     new Timer(() => {
       this.allowPause = true;
       this.cutscene = false;
-      this.soundManager.setCutscene(this.cutscene);
-      this.soundManager.setAmbience(this.determineSiren(this.remainingDots));
 
       this.allowPacmanMovement = true;
       this.pacman.moving = true;
@@ -968,6 +901,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
 
       this.gameEngine.changePausedState(this.gameEngine.running);
 
+      ost.pause();
       const audioCtx = new AudioContext();
       const pause = new Audio("audio/pause.mp3");
       const pauseSnd = audioCtx.createMediaElementSource(pause);
@@ -975,17 +909,16 @@ FINE INIZIALIZZAZIONE DEI SUONI
       pause.play();
 
       if (this.gameEngine.started) {
-        this.soundManager.resumeAmbience();
         this.gameUi.style.filter = 'unset';
         this.movementButtons.style.filter = 'unset';
         this.pausedText.style.visibility = 'hidden';
         this.pauseButton.innerHTML = 'pause';
         this.activeTimers.forEach((timer) => {
           timer.resume();
+          ost.play();
         });
       } else {
-        this.soundManager.stopAmbience();
-        this.soundManager.setAmbience('pause_beat', true);
+
         this.gameUi.style.filter = 'blur(5px)';
         this.movementButtons.style.filter = 'blur(5px)';
         this.pausedText.style.visibility = 'visible';
@@ -1014,11 +947,6 @@ FINE INIZIALIZZAZIONE DEI SUONI
     if (this.points >= 10000 && !this.extraLifeGiven) {
       this.extraLifeGiven = true;
 
-      const audioCtx = new AudioContext();
-      const extra_life = new Audio("audio/extra_life.mp3");
-      const extra_lifeSnd = audioCtx.createMediaElementSource(extra_life);
-      extra_lifeSnd.connect(audioCtx.destination);
-      extra_life.play();
 
       this.lives += 1;
       this.updateExtraLivesDisplay();
@@ -1035,13 +963,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
       const height = this.scaledTileSize * 2;
 
       this.displayText({ left, top }, e.detail.points, 2000, width, height);
-//      this.soundManager.play('fruit');
 
-      const audioCtx = new AudioContext();
-      const fruit = new Audio("audio/fruit.mp3");
-      const fruitSnd = audioCtx.createMediaElementSource(fruit);
-      fruitSnd.connect(audioCtx.destination);
-      fruit.play();
 
       this.updateFruitDisplay(
         this.fruit.determineImage('fruit', e.detail.points),
@@ -1056,8 +978,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
   deathSequence() {
     this.allowPause = false;
     this.cutscene = true;
-    this.soundManager.setCutscene(this.cutscene);
-    this.soundManager.stopAmbience();
+
     this.removeTimer({ detail: { timer: this.fruitTimer } });
     this.removeTimer({ detail: { timer: this.ghostCycleTimer } });
     this.removeTimer({ detail: { timer: this.endIdleTimer } });
@@ -1077,13 +998,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
       });
       this.pacman.prepDeathAnimation();
 
-      const audioCtx = new AudioContext();
-      const death = new Audio("audio/death.mp3");
-      const deathSnd = audioCtx.createMediaElementSource(death);
-      deathSnd.connect(audioCtx.destination);
-      death.play();
 
-//      this.soundManager.play('death');
 
       if (this.lives > 0) {
         this.lives -= 1;
@@ -1149,7 +1064,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
   dotEaten() {
     this.remainingDots -= 1;
 
-    this.soundManager.playDotSound();
+
 
 
 
@@ -1184,7 +1099,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
     this.blinky.speedUp();
 
     if (this.scaredGhosts.length === 0 && this.eyeGhosts === 0) {
-      this.soundManager.setAmbience(this.determineSiren(this.remainingDots));
+
     }
   }
 
@@ -1213,9 +1128,9 @@ FINE INIZIALIZZAZIONE DEI SUONI
   advanceLevel() {
     this.allowPause = false;
     this.cutscene = true;
-    this.soundManager.setCutscene(this.cutscene);
+
     this.allowKeyPresses = false;
-    this.soundManager.stopAmbience();
+
 
     this.entityList.forEach((entity) => {
       const entityRef = entity;
@@ -1291,7 +1206,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
       });
       this.scaredGhosts = [];
       if (this.eyeGhosts === 0) {
-        this.soundManager.setAmbience(this.determineSiren(this.remainingDots));
+
       }
     } else if (this.scaredGhosts.length > 0) {
       this.scaredGhosts.forEach((ghost) => {
@@ -1309,12 +1224,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
    */
   powerUp() {
     if (this.remainingDots !== 0) {
-    //  this.soundManager.setAmbience('power_up');
-    const audioCtx = new AudioContext();
-    const power_up = new Audio("audio/power_up.mp3");
-    const power_upSnd = audioCtx.createMediaElementSource(power_up);
-    power_upSnd.connect(audioCtx.destination);
-    power_up.play();
+
     }
 
     this.removeTimer({ detail: { timer: this.ghostFlashTimer } });
@@ -1356,12 +1266,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
     this.pauseTimer({ detail: { timer: this.ghostFlashTimer } });
     this.pauseTimer({ detail: { timer: this.ghostCycleTimer } });
     this.pauseTimer({ detail: { timer: this.fruitTimer } });
-    // this.soundManager.play('eat_ghost');
-    const audioCtx = new AudioContext();
-    const eat_ghost = new Audio("audio/eat_ghost.mp3");
-    const eat_ghostSnd = audioCtx.createMediaElementSource(eat_ghost);
-    eat_ghostSnd.connect(audioCtx.destination);
-    eat_ghost.play();
+
 
     this.scaredGhosts = this.scaredGhosts.filter(
       ghost => ghost.name !== e.detail.ghost.name,
@@ -1393,7 +1298,6 @@ FINE INIZIALIZZAZIONE DEI SUONI
     });
 
     new Timer(() => {
-      this.soundManager.setAmbience('eyes');
 
       this.resumeTimer({ detail: { timer: this.ghostFlashTimer } });
       this.resumeTimer({ detail: { timer: this.ghostCycleTimer } });
@@ -1422,7 +1326,6 @@ FINE INIZIALIZZAZIONE DEI SUONI
       const sound = this.scaredGhosts.length > 0
         ? 'power_up'
         : this.determineSiren(this.remainingDots);
-      this.soundManager.setAmbience(sound);
     }
   }
 
