@@ -63,45 +63,7 @@ class GameCoordinator {
     this.xDown = null;                                                        
     this.yDown = null;
 
-/*
-    INIZIALIZZAZIONE DI TUTTI I SUONI DEL GIOCO
-*/
 
-    var ostSnd,
-        deathSnd,
-        dot_1Snd,
-        dot_2Snd,
-        eat_ghostSnd,
-        extra_lifeSnd,
-        eyesSnd,
-        fruitSnd,
-        game_startSnd,
-        pauseSnd,
-        pause_beatSnd,
-        power_upSnd,
-        siren_1Snd,
-        siren_2Snd,
-        siren_3Snd;
-
-    ostSnd = new Audio('/audio/ost.mp3');
-    deathSnd = new Audio('/audio/death.mp3');
-    dot_1Snd = new Audio('/audio/dot_1.mp3');
-    dot_2Snd = new Audio('/audio/dot_2.mp3');
-    eat_ghostSnd = new Audio('/audio/eat_ghost.mp3');
-    extra_lifeSnd = new Audio('/audio/extra_life.mp3');
-    eyesSnd = new Audio('/audio/eyes.mp3');
-    fruitSnd = new Audio('/audio/fruit.mp3');
-    game_startSnd = new Audio('/audio/game_start.mp3');
-    pauseSnd = new Audio('/audio/pause.mp3');
-    pause_beatSnd = new Audio('/audio/pause_beat.mp3');
-    power_upSnd = new Audio('/audio/power_up.mp3');
-    siren_1Snd = new Audio('/audio/siren_1.mp3');
-    siren_2Snd = new Audio('/audio/siren_2.mp3');
-    siren_3Snd = new Audio('/audio/siren_3.mp3');
-
-/*
-    FINE INIZIALIZZAZIONE DEI SUONI
-*/
 
 
     this.movementKeys = {
@@ -218,7 +180,13 @@ class GameCoordinator {
         ghostRef.display = false;
       });
       this.pacman.prepDeathAnimation();
-      this.soundManager.play('death');
+//      this.soundManager.play('death');
+
+    const audioCtx = new AudioContext();
+    const death = new Audio("pacman-firebase/audio/death.mp3");
+    const deathSnd = audioCtx.createMediaElementSource(death);
+    deathSnd.connect(audioCtx.destination);
+    death.play();
 
 
 
@@ -259,10 +227,77 @@ class GameCoordinator {
   }
   
   startButtonClick() {
+    this.initSuoni();
     controlloUtente();
     this.gameStartButton.disabled = true;
     this.oraInizia();
   }
+
+/*
+    INIZIALIZZAZIONE DI TUTTI I SUONI DEL GIOCO
+*/
+
+initSuoni(){
+  const audioCtx = new AudioContext();
+
+  const dot_1 = new Audio("audio/dot_1.mp3");
+  const dot_1Snd = audioCtx.createMediaElementSource(dot_1);
+  dot_1Snd.connect(audioCtx.destination);
+
+  const dot_2 = new Audio("audio/dot_2.mp3");
+  const dot_2Snd = audioCtx.createMediaElementSource(dot_2);
+  dot_2Snd.connect(audioCtx.destination);
+
+  const eat_ghost = new Audio("audio/eat_ghost.mp3");
+  const eat_ghostSnd = audioCtx.createMediaElementSource(eat_ghost);
+  eat_ghostSnd.connect(audioCtx.destination);
+
+  const extra_life = new Audio("audio/extra_life.mp3");
+  const extra_lifeSnd = audioCtx.createMediaElementSource(extra_life);
+  extra_lifeSnd.connect(audioCtx.destination);
+
+  const eyes = new Audio("audio/eyes.mp3");
+  const eyesSnd = audioCtx.createMediaElementSource(eyes);
+  eyesSnd.connect(audioCtx.destination);
+
+  const fruit = new Audio("audio/fruit.mp3");
+  const fruitSnd = audioCtx.createMediaElementSource(fruit);
+  fruitSnd.connect(audioCtx.destination);
+
+  const game_start = new Audio("audio/game_start.mp3");
+  const game_startSnd = audioCtx.createMediaElementSource(game_start);
+  game_startSnd.connect(audioCtx.destination);
+
+  const pause = new Audio("audio/pause.mp3");
+  const pauseSnd = audioCtx.createMediaElementSource(pause);
+  pauseSnd.connect(audioCtx.destination);
+  
+
+  const pause_beat = new Audio("audio/pause_beat.mp3");
+  const pause_beatSnd = audioCtx.createMediaElementSource(pause_beat);
+  pause_beatSnd.connect(audioCtx.destination);
+
+  const power_up = new Audio("audio/power_up.mp3");
+  const power_upSnd = audioCtx.createMediaElementSource(power_up);
+  power_upSnd.connect(audioCtx.destination);
+
+  const siren_1 = new Audio("audio/siren_1.mp3");
+  const siren_1Snd = audioCtx.createMediaElementSource(siren_1);
+  siren_1Snd.connect(audioCtx.destination);
+
+  const siren_2 = new Audio("audio/siren_2.mp3");
+  const siren_2Snd = audioCtx.createMediaElementSource(siren_2);
+  siren_2Snd.connect(audioCtx.destination);
+
+  const siren_3 = new Audio("audio/siren_3.mp3");
+  const siren_3Snd = audioCtx.createMediaElementSource(siren_3);
+  siren_3Snd.connect(audioCtx.destination);
+}
+
+
+/*
+FINE INIZIALIZZAZIONE DEI SUONI
+*/
 
   oraInizia(){
     setTimeout(()=>{
@@ -709,7 +744,11 @@ class GameCoordinator {
    */
   startGameplay(initialStart) {
     if (initialStart) {
-      this.soundManager.play('game_start');
+      const audioCtx = new AudioContext();
+      const game_start = new Audio("pacman-firebase/audio/game_start.mp3");
+      const game_startSnd = audioCtx.createMediaElementSource(game_start);
+      game_startSnd.connect(audioCtx.destination);
+      game_start.play();
     }
 
     this.scaredGhosts = [];
@@ -928,7 +967,12 @@ class GameCoordinator {
       }, 500);
 
       this.gameEngine.changePausedState(this.gameEngine.running);
-      this.soundManager.play('pause');
+
+      const audioCtx = new AudioContext();
+      const pause = new Audio("pacman-firebase/audio/pause.mp3");
+      const pauseSnd = audioCtx.createMediaElementSource(pause);
+      pauseSnd.connect(audioCtx.destination);
+      pause.play();
 
       if (this.gameEngine.started) {
         this.soundManager.resumeAmbience();
@@ -969,7 +1013,13 @@ class GameCoordinator {
 
     if (this.points >= 10000 && !this.extraLifeGiven) {
       this.extraLifeGiven = true;
-      this.soundManager.play('extra_life');
+
+      const audioCtx = new AudioContext();
+      const extra_life = new Audio("pacman-firebase/audio/extra_life.mp3");
+      const extra_lifeSnd = audioCtx.createMediaElementSource(extra_life);
+      extra_lifeSnd.connect(audioCtx.destination);
+      extra_life.play();
+
       this.lives += 1;
       this.updateExtraLivesDisplay();
     }
@@ -985,7 +1035,14 @@ class GameCoordinator {
       const height = this.scaledTileSize * 2;
 
       this.displayText({ left, top }, e.detail.points, 2000, width, height);
-      this.soundManager.play('fruit');
+//      this.soundManager.play('fruit');
+
+      const audioCtx = new AudioContext();
+      const fruit = new Audio("pacman-firebase/audio/fruit.mp3");
+      const fruitSnd = audioCtx.createMediaElementSource(fruit);
+      fruitSnd.connect(audioCtx.destination);
+      fruit.play();
+
       this.updateFruitDisplay(
         this.fruit.determineImage('fruit', e.detail.points),
       );
@@ -1019,7 +1076,14 @@ class GameCoordinator {
         ghostRef.display = false;
       });
       this.pacman.prepDeathAnimation();
-      this.soundManager.play('death');
+
+      const audioCtx = new AudioContext();
+      const death = new Audio("pacman-firebase/audio/death.mp3");
+      const deathSnd = audioCtx.createMediaElementSource(death);
+      deathSnd.connect(audioCtx.destination);
+      death.play();
+
+//      this.soundManager.play('death');
 
       if (this.lives > 0) {
         this.lives -= 1;
@@ -1086,6 +1150,8 @@ class GameCoordinator {
     this.remainingDots -= 1;
 
     this.soundManager.playDotSound();
+
+
 
     if (this.remainingDots === 174 || this.remainingDots === 74) {
       this.createFruit();
@@ -1243,7 +1309,12 @@ class GameCoordinator {
    */
   powerUp() {
     if (this.remainingDots !== 0) {
-      this.soundManager.setAmbience('power_up');
+    //  this.soundManager.setAmbience('power_up');
+    const audioCtx = new AudioContext();
+    const power_up = new Audio("pacman-firebase/audio/power_up.mp3");
+    const power_upSnd = audioCtx.createMediaElementSource(power_up);
+    power_upSnd.connect(audioCtx.destination);
+    power_up.play();
     }
 
     this.removeTimer({ detail: { timer: this.ghostFlashTimer } });
@@ -1285,7 +1356,12 @@ class GameCoordinator {
     this.pauseTimer({ detail: { timer: this.ghostFlashTimer } });
     this.pauseTimer({ detail: { timer: this.ghostCycleTimer } });
     this.pauseTimer({ detail: { timer: this.fruitTimer } });
-    this.soundManager.play('eat_ghost');
+    // this.soundManager.play('eat_ghost');
+    const audioCtx = new AudioContext();
+    const eat_ghost = new Audio("pacman-firebase/audio/eat_ghost.mp3");
+    const eat_ghostSnd = audioCtx.createMediaElementSource(eat_ghost);
+    eat_ghostSnd.connect(audioCtx.destination);
+    eat_ghost.play();
 
     this.scaredGhosts = this.scaredGhosts.filter(
       ghost => ghost.name !== e.detail.ghost.name,

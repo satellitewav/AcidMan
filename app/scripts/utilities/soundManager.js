@@ -45,6 +45,13 @@ class SoundManager {
    * @param {String} sound
    */
   play(sound) {
+
+    const audioCtx = new AudioContext();
+    const suono = new Audio("/audio/pause_beat.mp3");
+    const source = audioCtx.createMediaElementSource(suono);
+    source.connect(audioCtx.destination);
+    suono.play();
+
     this.soundEffect = new Audio(`${this.baseUrl}${sound}.${this.fileFormat}`);
     this.soundEffect.volume = this.masterVolume;
     this.soundEffect.play();
@@ -55,19 +62,7 @@ class SoundManager {
    * sound effects, but not too quickly.
    */
   playDotSound() {
-    this.queuedDotSound = true;
-
-    if (!this.dotPlayer) {
-      this.queuedDotSound = false;
-      this.dotSound = (this.dotSound === 1) ? 2 : 1;
-
-      this.dotPlayer = new Audio(
-        `${this.baseUrl}dot_${this.dotSound}.${this.fileFormat}`,
-      );
-      this.dotPlayer.onended = this.dotSoundEnded.bind(this);
-      this.dotPlayer.volume = this.masterVolume;
-      this.dotPlayer.play();
-    }
+ 
   }
 
   /**
