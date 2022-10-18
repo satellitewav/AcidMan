@@ -183,7 +183,7 @@ class GameCoordinator {
 //      this.soundManager.play('death');
 
     const audioCtx = new AudioContext();
-    const death = new Audio("pacman-firebase/audio/death.mp3");
+    const death = new Audio("audio/death.mp3");
     const deathSnd = audioCtx.createMediaElementSource(death);
     deathSnd.connect(audioCtx.destination);
     death.play();
@@ -745,7 +745,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
   startGameplay(initialStart) {
     if (initialStart) {
       const audioCtx = new AudioContext();
-      const game_start = new Audio("pacman-firebase/audio/game_start.mp3");
+      const game_start = new Audio("audio/game_start.mp3");
       const game_startSnd = audioCtx.createMediaElementSource(game_start);
       game_startSnd.connect(audioCtx.destination);
       game_start.play();
@@ -969,7 +969,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
       this.gameEngine.changePausedState(this.gameEngine.running);
 
       const audioCtx = new AudioContext();
-      const pause = new Audio("pacman-firebase/audio/pause.mp3");
+      const pause = new Audio("audio/pause.mp3");
       const pauseSnd = audioCtx.createMediaElementSource(pause);
       pauseSnd.connect(audioCtx.destination);
       pause.play();
@@ -1015,7 +1015,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
       this.extraLifeGiven = true;
 
       const audioCtx = new AudioContext();
-      const extra_life = new Audio("pacman-firebase/audio/extra_life.mp3");
+      const extra_life = new Audio("audio/extra_life.mp3");
       const extra_lifeSnd = audioCtx.createMediaElementSource(extra_life);
       extra_lifeSnd.connect(audioCtx.destination);
       extra_life.play();
@@ -1038,7 +1038,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
 //      this.soundManager.play('fruit');
 
       const audioCtx = new AudioContext();
-      const fruit = new Audio("pacman-firebase/audio/fruit.mp3");
+      const fruit = new Audio("audio/fruit.mp3");
       const fruitSnd = audioCtx.createMediaElementSource(fruit);
       fruitSnd.connect(audioCtx.destination);
       fruit.play();
@@ -1078,7 +1078,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
       this.pacman.prepDeathAnimation();
 
       const audioCtx = new AudioContext();
-      const death = new Audio("pacman-firebase/audio/death.mp3");
+      const death = new Audio("audio/death.mp3");
       const deathSnd = audioCtx.createMediaElementSource(death);
       deathSnd.connect(audioCtx.destination);
       death.play();
@@ -1311,7 +1311,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
     if (this.remainingDots !== 0) {
     //  this.soundManager.setAmbience('power_up');
     const audioCtx = new AudioContext();
-    const power_up = new Audio("pacman-firebase/audio/power_up.mp3");
+    const power_up = new Audio("audio/power_up.mp3");
     const power_upSnd = audioCtx.createMediaElementSource(power_up);
     power_upSnd.connect(audioCtx.destination);
     power_up.play();
@@ -1358,7 +1358,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
     this.pauseTimer({ detail: { timer: this.fruitTimer } });
     // this.soundManager.play('eat_ghost');
     const audioCtx = new AudioContext();
-    const eat_ghost = new Audio("pacman-firebase/audio/eat_ghost.mp3");
+    const eat_ghost = new Audio("audio/eat_ghost.mp3");
     const eat_ghostSnd = audioCtx.createMediaElementSource(eat_ghost);
     eat_ghostSnd.connect(audioCtx.destination);
     eat_ghost.play();
