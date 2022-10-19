@@ -766,7 +766,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
    * Displays a rolling log of the seven most-recently eaten fruit
    * @param {String} rawImageSource
    */
-  updateFruitDisplay(rawImageSource) { /*
+  updateFruitDisplay(rawImageSource) { 
     const parsedSource = rawImageSource.slice(
       rawImageSource.indexOf('(') + 1,
       rawImageSource.indexOf(')'),
@@ -779,7 +779,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
     const fruitPic = document.createElement('img');
     fruitPic.setAttribute('src', parsedSource);
     fruitPic.style.height = `${this.scaledTileSize * 2}px`;
-    this.fruitDisplay.appendChild(fruitPic); */
+    this.fruitDisplay.appendChild(fruitPic);
   }
 
   /**
@@ -994,7 +994,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
    * Animates Pacman's death, subtracts a life, and resets character positions if
    * the player has remaining lives.
    */
-  deathSequence() {
+  deathSequence() { /*
     this.allowPause = false;
     this.cutscene = true;
 
@@ -1045,7 +1045,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
         this.gameOver();
       }
     }, 750);
-    
+    */
   }
 
   /**

@@ -1,3 +1,1671 @@
+class GameCoordinator {
+  constructor() {
+    this.gameUi = document.getElementById('game-ui');
+    this.rowTop = document.getElementById('row-top');
+    this.mazeDiv = document.getElementById('maze');
+    this.mazeImg = document.getElementById('maze-img');
+    this.mazeCover = document.getElementById('maze-cover');
+    this.pointsDisplay = document.getElementById('points-display');
+    this.nomeInsta = document.getElementById('nomeUtente');
+    this.highScoreDisplay = document.getElementById('high-score-display');
+    var highScore = "0";
+    this.extraLivesDisplay = document.getElementById('extra-lives');
+    this.fruitDisplay = document.getElementById('fruit-display');
+    this.mainMenu = document.getElementById('main-menu-container');
+    this.gameStartButton = document.getElementById('game-start');
+    this.salvaEdEsci = document.getElementById('salva');
+    this.leftCover = document.getElementById('left-cover');
+    this.rightCover = document.getElementById('right-cover');
+    this.pausedText = document.getElementById('paused-text');
+    this.bottomRow = document.getElementById('bottom-row');
+    this.movementButtons = document.getElementById('movement-buttons');
+
+    this.mazeArray = [
+      ['XXXXXXXXXXXXXXXXXXXXXXXXXXXX'],
+      ['XooooooooooooXXooooooooooooX'],
+      ['XoXXXXoXXXXXoXXoXXXXXoXXXXoX'],
+      ['XOXXXXoXXXXXoXXoXXXXXoXXXXOX'],
+      ['XoXXXXoXXXXXoXXoXXXXXoXXXXoX'],
+      ['XooooooooooooooooooooooooooX'],
+      ['XoXXXXoXXoXXXXXXXXoXXoXXXXoX'],
+      ['XoXXXXoXXoXXXXXXXXoXXoXXXXoX'],
+      ['XooooooXXooooXXooooXXooooooX'],
+      ['XXXXXXoXXXXX XX XXXXXoXXXXXX'],
+      ['XXXXXXoXXXXX XX XXXXXoXXXXXX'],
+      ['XXXXXXoXX          XXoXXXXXX'],
+      ['XXXXXXoXX XXXXXXXX XXoXXXXXX'],
+      ['XXXXXXoXX X      X XXoXXXXXX'],
+      ['      o   X      X   o      '],
+      ['XXXXXXoXX X      X XXoXXXXXX'],
+      ['XXXXXXoXX XXXXXXXX XXoXXXXXX'],
+      ['XXXXXXoXX          XXoXXXXXX'],
+      ['XXXXXXoXX XXXXXXXX XXoXXXXXX'],
+      ['XXXXXXoXX XXXXXXXX XXoXXXXXX'],
+      ['XooooooooooooXXooooooooooooX'],
+      ['XoXXXXoXXXXXoXXoXXXXXoXXXXoX'],
+      ['XoXXXXoXXXXXoXXoXXXXXoXXXXoX'],
+      ['XOooXXooooooo  oooooooXXooOX'],
+      ['XXXoXXoXXoXXXXXXXXoXXoXXoXXX'],
+      ['XXXoXXoXXoXXXXXXXXoXXoXXoXXX'],
+      ['XooooooXXooooXXooooXXooooooX'],
+      ['XoXXXXXXXXXXoXXoXXXXXXXXXXoX'],
+      ['XoXXXXXXXXXXoXXoXXXXXXXXXXoX'],
+      ['XooooooooooooooooooooooooooX'],
+      ['XXXXXXXXXXXXXXXXXXXXXXXXXXXX'],
+    ];
+
+    this.maxFps = 120;
+    this.tileSize = 8;
+    this.scale = this.determineScale(1);
+    this.scaledTileSize = this.tileSize * this.scale;
+    this.firstGame = true;
+    this.xDown = null;                                                        
+    this.yDown = null;
+
+
+
+
+    this.movementKeys = {
+      // WASD
+      87: 'up',
+      83: 'down',
+      65: 'left',
+      68: 'right',
+
+      // Arrow Keys
+      38: 'up',
+      40: 'down',
+      37: 'left',
+      39: 'right',
+    };
+
+    this.fruitPoints = {
+      1: 100,
+      2: 300,
+      3: 500,
+      4: 700,
+      5: 1000,
+      6: 2000,
+      7: 3000,
+      8: 5000,
+    };
+
+    this.mazeArray.forEach((row, rowIndex) => {
+      this.mazeArray[rowIndex] = row[0].split('');
+    });
+
+    this.salvaEdEsci.addEventListener(
+      'click',
+      this.SalvaGioco.bind(this),
+    );
+    this.gameStartButton.addEventListener(
+      'click',
+      this.startButtonClick.bind(this),
+    );
+  
+
+
+    const head = document.getElementsByTagName('head')[0];
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'build/app.css';
+
+    link.onload = this.preloadAssets.bind(this);
+
+    head.appendChild(link);
+  }
+
+  /**
+   * Recursive method which determines the largest possible scale the game's graphics can use
+   * @param {Number} scale
+   */
+  determineScale(scale) {
+    const availableScreenHeight = Math.min(
+      document.documentElement.clientHeight,
+      window.innerHeight || 0,
+    );
+    const availableScreenWidth = Math.min(
+      document.documentElement.clientWidth,
+      window.innerWidth || 0,
+    );
+    const scaledTileSize = this.tileSize * scale;
+
+    // The original Pac-Man game leaves 5 tiles of height (3 above, 2 below) surrounding the
+    // maze for the UI. See app\style\graphics\spriteSheets\references\mazeGridSystemReference.png
+    // for reference.
+    const mazeTileHeight = this.mazeArray.length + 5;
+    const mazeTileWidth = this.mazeArray[0][0].split('').length;
+
+    if (
+      scaledTileSize * mazeTileHeight < availableScreenHeight
+      && scaledTileSize * mazeTileWidth < availableScreenWidth
+    ) {
+      return this.determineScale(scale + 1);
+    }
+
+    return scale - 1;
+  }
+
+
+
+
+
+
+
+  /**
+   * Reveals the game underneath the loading covers and starts gameplay
+   */
+
+  SalvaGioco(){
+    this.allowPause = false;
+    this.cutscene = true;
+
+    var i = 2;
+    // this.musica(i);
+
+    this.removeTimer({ detail: { timer: this.fruitTimer } });
+    this.removeTimer({ detail: { timer: this.ghostCycleTimer } });
+    this.removeTimer({ detail: { timer: this.endIdleTimer } });
+    this.removeTimer({ detail: { timer: this.ghostFlashTimer } });
+
+    this.allowKeyPresses = false;
+    this.pacman.moving = false;
+    this.ghosts.forEach((ghost) => {
+      const ghostRef = ghost;
+      ghostRef.moving = false;
+    });
+
+    new Timer(() => {
+      this.ghosts.forEach((ghost) => {
+        const ghostRef = ghost;
+        ghostRef.display = false;
+      });
+      this.pacman.prepDeathAnimation();
+
+
+
+
+
+      var highScore = window.localStorage.getItem('highScore');
+      localStorage.setItem('highScore', highScore);
+      console.log(highScore);
+      assegnaPunteggio();
+  
+      new Timer(() => {
+        this.displayText(
+          {
+            left: this.scaledTileSize * 9,
+            top: this.scaledTileSize * 16.5,
+          },
+          'game_over',
+          4000,
+          this.scaledTileSize * 10,
+          this.scaledTileSize * 2,
+        );
+        this.fruit.hideFruit();
+        this.salvaEdEsci.disabled = true;
+  
+        new Timer(() => {
+          this.leftCover.style.left = '0';
+          this.rightCover.style.right = '0';
+  
+          setTimeout(() => {
+            this.mainMenu.style.opacity = 1;
+            this.gameStartButton.disabled = false;
+            location.reload();
+          }, 1000);
+        }, 2500);
+      }, 2250);
+
+
+
+    }, 750);
+  }
+  
+  startButtonClick() {
+    controlloUtente();
+    this.gameStartButton.disabled = true;
+    this.oraInizia();
+  }
+
+/*
+    INIZIALIZZAZIONE DI TUTTI I SUONI DEL GIOCO
+*/
+
+
+
+/*
+FINE INIZIALIZZAZIONE DEI SUONI
+*/
+
+  oraInizia(){
+    setTimeout(()=>{
+      console.log("inside timeout");
+      var highScore = window.localStorage.getItem('highScore');
+      console.log(highScore);
+      this.leftCover.style.left = '-50%';
+      this.rightCover.style.right = '-50%';
+      this.mainMenu.style.opacity = 0;
+
+  
+      setTimeout(() => {
+        this.mainMenu.style.visibility = 'hidden';
+      }, 1000);
+      this.reset();
+      if (this.firstGame) {
+        this.firstGame = false;
+        this.init();
+      }
+      this.startGameplay(true);
+    },300);
+  }
+
+  /**
+   * Toggles the master volume for the soundManager, and saves the preference to storage
+   */
+
+
+  /**
+   * Sets the icon for the sound button
+   */
+
+
+  /**
+   * Displays an error message in the event assets are unable to download
+   */
+  displayErrorMessage() {
+    const loadingContainer = document.getElementById('loading-container');
+    const errorMessage = document.getElementById('error-message');
+    loadingContainer.style.opacity = 0;
+    setTimeout(() => {
+      loadingContainer.remove();
+      errorMessage.style.opacity = 1;
+      errorMessage.style.visibility = 'visible';
+    }, 1500);
+  }
+
+  /**
+   * Load all assets into a hidden Div to pre-load them into memory.
+   * There is probably a better way to read all of these file names.
+   */
+  preloadAssets() {
+    return new Promise((resolve) => {
+      const loadingContainer = document.getElementById('loading-container');
+      const loadingPacman = document.getElementById('loading-pacman');
+      const loadingDotMask = document.getElementById('loading-dot-mask');
+
+      const imgBase = 'app/style/graphics/spriteSheets/';
+      const imgSources = [
+        // Pacman
+        `${imgBase}characters/pacman/arrow_down.svg`,
+        `${imgBase}characters/pacman/arrow_left.svg`,
+        `${imgBase}characters/pacman/arrow_right.svg`,
+        `${imgBase}characters/pacman/arrow_up.svg`,
+        `${imgBase}characters/pacman/pacman_death.svg`,
+        `${imgBase}characters/pacman/pacman_error.svg`,
+        `${imgBase}characters/pacman/pacman_down.svg`,
+        `${imgBase}characters/pacman/pacman_left.svg`,
+        `${imgBase}characters/pacman/pacman_right.svg`,
+        `${imgBase}characters/pacman/pacman_up.svg`,
+
+        // Blinky
+        `${imgBase}characters/ghosts/blinky/blinky_down_angry.svg`,
+        `${imgBase}characters/ghosts/blinky/blinky_down_annoyed.svg`,
+        `${imgBase}characters/ghosts/blinky/blinky_down.svg`,
+        `${imgBase}characters/ghosts/blinky/blinky_left_angry.svg`,
+        `${imgBase}characters/ghosts/blinky/blinky_left_annoyed.svg`,
+        `${imgBase}characters/ghosts/blinky/blinky_left.svg`,
+        `${imgBase}characters/ghosts/blinky/blinky_right_angry.svg`,
+        `${imgBase}characters/ghosts/blinky/blinky_right_annoyed.svg`,
+        `${imgBase}characters/ghosts/blinky/blinky_right.svg`,
+        `${imgBase}characters/ghosts/blinky/blinky_up_angry.svg`,
+        `${imgBase}characters/ghosts/blinky/blinky_up_annoyed.svg`,
+        `${imgBase}characters/ghosts/blinky/blinky_up.svg`,
+
+        // Clyde
+        `${imgBase}characters/ghosts/clyde/clyde_down.svg`,
+        `${imgBase}characters/ghosts/clyde/clyde_left.svg`,
+        `${imgBase}characters/ghosts/clyde/clyde_right.svg`,
+        `${imgBase}characters/ghosts/clyde/clyde_up.svg`,
+
+        // Inky
+        `${imgBase}characters/ghosts/inky/inky_down.svg`,
+        `${imgBase}characters/ghosts/inky/inky_left.svg`,
+        `${imgBase}characters/ghosts/inky/inky_right.svg`,
+        `${imgBase}characters/ghosts/inky/inky_up.svg`,
+
+        // Pinky
+        `${imgBase}characters/ghosts/pinky/pinky_down.svg`,
+        `${imgBase}characters/ghosts/pinky/pinky_left.svg`,
+        `${imgBase}characters/ghosts/pinky/pinky_right.svg`,
+        `${imgBase}characters/ghosts/pinky/pinky_up.svg`,
+
+        // Ghosts Common
+        `${imgBase}characters/ghosts/eyes_down.svg`,
+        `${imgBase}characters/ghosts/eyes_left.svg`,
+        `${imgBase}characters/ghosts/eyes_right.svg`,
+        `${imgBase}characters/ghosts/eyes_up.svg`,
+        `${imgBase}characters/ghosts/scared_blue.svg`,
+        `${imgBase}characters/ghosts/scared_white.svg`,
+
+        // Dots
+        `${imgBase}pickups/pacdot.svg`,
+        `${imgBase}pickups/powerPellet.svg`,
+
+        // Fruit
+        `${imgBase}pickups/apple.svg`,
+        `${imgBase}pickups/bell.svg`,
+        `${imgBase}pickups/cherry.svg`,
+        `${imgBase}pickups/galaxian.svg`,
+        `${imgBase}pickups/key.svg`,
+        `${imgBase}pickups/melon.svg`,
+        `${imgBase}pickups/orange.svg`,
+        `${imgBase}pickups/strawberry.svg`,
+
+        // Text
+        `${imgBase}text/ready.svg`,
+
+        // Points
+        `${imgBase}text/100.svg`,
+        `${imgBase}text/200.svg`,
+        `${imgBase}text/300.svg`,
+        `${imgBase}text/400.svg`,
+        `${imgBase}text/500.svg`,
+        `${imgBase}text/700.svg`,
+        `${imgBase}text/800.svg`,
+        `${imgBase}text/1000.svg`,
+        `${imgBase}text/1600.svg`,
+        `${imgBase}text/2000.svg`,
+        `${imgBase}text/3000.svg`,
+        `${imgBase}text/5000.svg`,
+
+        // Maze
+        `${imgBase}maze/maze_blue.svg`,
+
+        // Misc
+        'app/style/graphics/extra_life.png',
+      ];
+
+      const audioBase = 'app/style/audio/';
+      const audioSources = [
+        `${audioBase}game_start.mp3`,
+        `${audioBase}pause.mp3`,
+        `${audioBase}pause_beat.mp3`,
+        `${audioBase}power_up.mp3`,
+        `${audioBase}extra_life.mp3`,
+        `${audioBase}eyes.mp3`,
+        `${audioBase}eat_ghost.mp3`,
+        `${audioBase}death.mp3`,
+        `${audioBase}fruit.mp3`,
+        `${audioBase}dot_1.mp3`,
+        `${audioBase}dot_2.mp3`,
+      ];
+
+      const totalSources = imgSources.length + audioSources.length;
+      this.remainingSources = totalSources;
+
+      loadingPacman.style.left = '0';
+      loadingDotMask.style.width = '0';
+
+      Promise.all([
+        this.createElements(imgSources, 'img', totalSources, this),
+        this.createElements(audioSources, 'audio', totalSources, this),
+      ])
+        .then(() => {
+          loadingContainer.style.opacity = 0;
+          resolve();
+
+          setTimeout(() => {
+            loadingContainer.remove();
+            this.mainMenu.style.opacity = 1;
+            this.mainMenu.style.visibility = 'visible';
+          }, 1500);
+        })
+        .catch(this.displayErrorMessage);
+    });
+  }
+
+  /**
+   * Iterates through a list of sources and updates the loading bar as the assets load in
+   * @param {String[]} sources
+   * @param {('img'|'audio')} type
+   * @param {Number} totalSources
+   * @param {Object} gameCoord
+   * @returns {Promise}
+   */
+  createElements(sources, type, totalSources, gameCoord) {
+    const loadingContainer = document.getElementById('loading-container');
+    const preloadDiv = document.getElementById('preload-div');
+    const loadingPacman = document.getElementById('loading-pacman');
+    const containerWidth = loadingContainer.scrollWidth
+      - loadingPacman.scrollWidth;
+    const loadingDotMask = document.getElementById('loading-dot-mask');
+
+    const gameCoordRef = gameCoord;
+
+    return new Promise((resolve, reject) => {
+      let loadedSources = 0;
+
+      sources.forEach((source) => {
+        const element = type === 'img' ? new Image() : new Audio();
+        preloadDiv.appendChild(element);
+
+        const elementReady = () => {
+          gameCoordRef.remainingSources -= 1;
+          loadedSources += 1;
+          const percent = 1 - gameCoordRef.remainingSources / totalSources;
+          loadingPacman.style.left = `${percent * containerWidth}px`;
+          loadingDotMask.style.width = loadingPacman.style.left;
+
+          if (loadedSources === sources.length) {
+            resolve();
+          }
+        };
+
+        if (type === 'img') {
+          element.onload = elementReady;
+          element.onerror = reject;
+        } else {
+          element.addEventListener('canplaythrough', elementReady);
+          element.onerror = reject;
+        }
+
+        element.src = source;
+
+        if (type === 'audio') {
+          element.load();
+        }
+      });
+    });
+  }
+
+  /**
+   * Resets gameCoordinator values to their default states
+   */
+  reset() {
+    this.activeTimers = [];
+    this.points = 0;
+    this.level = 1;
+    this.lives = 2;
+    this.extraLifeGiven = false;
+    this.remainingDots = 0;
+    this.allowKeyPresses = true;
+    this.allowPacmanMovement = false;
+    this.allowPause = false;
+    this.cutscene = true;
+
+    if (this.firstGame) {
+      setInterval(() => {
+        this.collisionDetectionLoop();
+      }, 500);
+
+      this.pacman = new Pacman(
+        this.scaledTileSize,
+        this.mazeArray,
+        new CharacterUtil(),
+      );
+      this.blinky = new Ghost(
+        this.scaledTileSize,
+        this.mazeArray,
+        this.pacman,
+        'blinky',
+        this.level,
+        new CharacterUtil(),
+      );
+      this.pinky = new Ghost(
+        this.scaledTileSize,
+        this.mazeArray,
+        this.pacman,
+        'pinky',
+        this.level,
+        new CharacterUtil(),
+      );
+      this.inky = new Ghost(
+        this.scaledTileSize,
+        this.mazeArray,
+        this.pacman,
+        'inky',
+        this.level,
+        new CharacterUtil(),
+        this.blinky,
+      );
+      this.clyde = new Ghost(
+        this.scaledTileSize,
+        this.mazeArray,
+        this.pacman,
+        'clyde',
+        this.level,
+        new CharacterUtil(),
+      );
+      this.fruit = new Pickup(
+        'fruit',
+        this.scaledTileSize,
+        13.5,
+        17,
+        this.pacman,
+        this.mazeDiv,
+        100,
+      );
+    }
+
+    this.entityList = [
+      this.pacman,
+      this.blinky,
+      this.pinky,
+      this.inky,
+      this.clyde,
+      this.fruit,
+    ];
+
+    this.ghosts = [this.blinky, this.pinky, this.inky, this.clyde];
+
+    this.scaredGhosts = [];
+    this.eyeGhosts = 0;
+
+    if (this.firstGame) {
+      this.drawMaze(this.mazeArray, this.entityList);
+      this.setUiDimensions();
+    } else {
+      this.pacman.reset();
+      this.ghosts.forEach((ghost) => {
+        ghost.reset(true);
+      });
+      this.pickups.forEach((pickup) => {
+        if (pickup.type !== 'fruit') {
+          this.remainingDots += 1;
+          pickup.reset();
+          this.entityList.push(pickup);
+        }
+      });
+    }
+
+    var record = window.localStorage.getItem('highScore');
+    console.log(record);
+    this.pointsDisplay.innerHTML = '00';
+    
+    this.highScoreDisplay.innerHTML = record || '00';
+    var text=document.getElementById('name');
+    if(text.value == ""){
+      this.nomeInsta.innerHTML = "Partita locale";
+    }else{
+      this.nomeInsta.innerHTML = text.value + ":";
+    }
+  
+    console.log(record);
+    this.clearDisplay(this.fruitDisplay);
+
+    const volumePreference = parseInt(
+      localStorage.getItem('volumePreference') || 1,
+      10,
+    );
+
+  }
+
+  /**
+   * Calls necessary setup functions to start the game
+   */
+  init() {
+    this.registerEventListeners();
+    this.gameEngine = new GameEngine(this.maxFps, this.entityList);
+    this.gameEngine.start();
+  }
+
+  /**
+   * Adds HTML elements to draw on the webpage by iterating through the 2D maze array
+   * @param {Array} mazeArray - 2D array representing the game board
+   * @param {Array} entityList - List of entities to be used throughout the game
+   */
+  drawMaze(mazeArray, entityList) {
+    this.pickups = [this.fruit];
+
+    this.mazeDiv.style.height = `${this.scaledTileSize * 31}px`;
+    this.mazeDiv.style.width = `${this.scaledTileSize * 28}px`;
+    this.gameUi.style.width = `${this.scaledTileSize * 28}px`;
+    this.bottomRow.style.minHeight = `${this.scaledTileSize * 2}px`;
+    this.dotContainer = document.getElementById('dot-container');
+
+    mazeArray.forEach((row, rowIndex) => {
+      row.forEach((block, columnIndex) => {
+        if (block === 'o' || block === 'O') {
+          const type = block === 'o' ? 'pacdot' : 'powerPellet';
+          const points = block === 'o' ? 10 : 50;
+          const dot = new Pickup(
+            type,
+            this.scaledTileSize,
+            columnIndex,
+            rowIndex,
+            this.pacman,
+            this.dotContainer,
+            points,
+          );
+
+          entityList.push(dot);
+          this.pickups.push(dot);
+          this.remainingDots += 1;
+        }
+      });
+    });
+  }
+
+  setUiDimensions() {
+    this.gameUi.style.fontSize = `${this.scaledTileSize}px`;
+    this.rowTop.style.marginBottom = `${this.scaledTileSize}px`;
+  }
+
+  /**
+   * Loop which periodically checks which pickups are nearby Pacman.
+   * Pickups which are far away will not be considered for collision detection.
+   */
+  collisionDetectionLoop() {
+    if (this.pacman.position) {
+      const maxDistance = this.pacman.velocityPerMs * 750;
+      const pacmanCenter = {
+        x: this.pacman.position.left + this.scaledTileSize,
+        y: this.pacman.position.top + this.scaledTileSize,
+      };
+
+      // Set this flag to TRUE to see how two-phase collision detection works!
+      const debugging = false;
+
+      this.pickups.forEach((pickup) => {
+        pickup.checkPacmanProximity(maxDistance, pacmanCenter, debugging);
+      });
+    }
+  }
+
+
+
+  musica(i){
+    
+    var ost,sil;
+    
+    sil = new Audio('/AcidMan/audio/morte.mp3');
+    this.ost = new Audio('/AcidMan/audio/ost.mp3');
+
+    if(i == 1){  
+      this.ost.play();
+      this.ost.loop = true;
+    }else{
+      this.ost.pause();
+      this.ost.currentTime = 0;
+      sil.play();
+    }
+  }
+
+  /**
+   * Displays "Ready!" and allows Pacman to move after a breif delay
+   * @param {Boolean} initialStart - Special condition for the game's beginning
+   */
+  startGameplay(initialStart) {
+    if (initialStart) {
+    //  var i = 1;
+    //  this.musica(i);
+    var ost;
+    ost = new Audio('/AcidMan/audio/ost.mp3');
+    ost.loop = true;
+    ost.play();
+    }
+
+    this.scaredGhosts = [];
+    this.eyeGhosts = 0;
+    this.allowPacmanMovement = false;
+
+    const left = this.scaledTileSize * 11;
+    const top = this.scaledTileSize * 16.5;
+    const duration = initialStart ? 4500 : 2000;
+    const width = this.scaledTileSize * 6;
+    const height = this.scaledTileSize * 2;
+
+    this.displayText({ left, top }, 'ready', duration, width, height);
+    this.updateExtraLivesDisplay();
+
+    new Timer(() => {
+      this.allowPause = true;
+      this.cutscene = false;
+
+      this.allowPacmanMovement = true;
+      this.pacman.moving = true;
+
+      this.ghosts.forEach((ghost) => {
+        const ghostRef = ghost;
+        ghostRef.moving = true;
+      });
+
+      this.ghostCycle('scatter');
+
+      this.idleGhosts = [this.pinky, this.inky, this.clyde];
+      this.releaseGhost();
+    }, duration);
+  }
+
+  /**
+   * Clears out all children nodes from a given display element
+   * @param {String} display
+   */
+  clearDisplay(display) {
+    while (display.firstChild) {
+      display.removeChild(display.firstChild);
+    }
+  }
+
+  /**
+   * Displays extra life images equal to the number of remaining lives
+   */
+  updateExtraLivesDisplay() {
+    this.clearDisplay(this.extraLivesDisplay);
+
+    for (let i = 0; i < this.lives; i += 1) {
+      const extraLifePic = document.createElement('img');
+      extraLifePic.setAttribute('src', 'app/style/graphics/extra_life.svg');
+      extraLifePic.style.height = `${this.scaledTileSize * 2}px`;
+      this.extraLivesDisplay.appendChild(extraLifePic);
+    }
+  }
+
+  /**
+   * Displays a rolling log of the seven most-recently eaten fruit
+   * @param {String} rawImageSource
+   */
+  updateFruitDisplay(rawImageSource) { 
+    const parsedSource = rawImageSource.slice(
+      rawImageSource.indexOf('(') + 1,
+      rawImageSource.indexOf(')'),
+    );
+
+    if (this.fruitDisplay.children.length === 7) {
+      this.fruitDisplay.removeChild(this.fruitDisplay.firstChild);
+    }
+
+    const fruitPic = document.createElement('img');
+    fruitPic.setAttribute('src', parsedSource);
+    fruitPic.style.height = `${this.scaledTileSize * 2}px`;
+    this.fruitDisplay.appendChild(fruitPic);
+  }
+
+  /**
+   * Cycles the ghosts between 'chase' and 'scatter' mode
+   * @param {('chase'|'scatter')} mode
+   */
+  ghostCycle(mode) {
+    const delay = mode === 'scatter' ? 7000 : 20000;
+    const nextMode = mode === 'scatter' ? 'chase' : 'scatter';
+
+    this.ghostCycleTimer = new Timer(() => {
+      this.ghosts.forEach((ghost) => {
+        ghost.changeMode(nextMode);
+      });
+
+      this.ghostCycle(nextMode);
+    }, delay);
+  }
+
+  /**
+   * Releases a ghost from the Ghost House after a delay
+   */
+  releaseGhost() {
+    if (this.idleGhosts.length > 0) {
+      const delay = Math.max((8 - (this.level - 1) * 4) * 1000, 0);
+
+      this.endIdleTimer = new Timer(() => {
+        this.idleGhosts[0].endIdleMode();
+        this.idleGhosts.shift();
+      }, delay);
+    }
+  }
+
+	getTouches(evt) {
+	  return evt.touches ||             // browser API
+	         evt.originalEvent.touches; // jQuery
+	}                                                     
+
+	handleTouchStart(evt) {
+	    const firstTouch = this.getTouches(evt)[0];                                      
+	    this.xDown = firstTouch.clientX;                                      
+	    this.yDown = firstTouch.clientY;                                      
+	};                                                
+
+	handleTouchMove(evt) {
+	    if ( ! this.xDown || ! this.yDown ) {
+	        return;
+	    }
+
+	    var xUp = evt.touches[0].clientX;                                    
+	    var yUp = evt.touches[0].clientY;
+
+	    var xDiff = this.xDown - xUp;
+	    var yDiff = this.yDown - yUp;
+
+	    if ( Math.abs( xDiff ) > Math.abs( yDiff ) ) {/*most significant*/
+	        if ( xDiff > 0 ) {
+	      		this.changeDirection("left");
+	        } else {
+	      		this.changeDirection("right");
+	        }                       
+	    } else {
+	        if ( yDiff > 0 ) {
+	      		this.changeDirection("up");
+	        } else { 
+	      		this.changeDirection("down");
+	        }                                                                 
+	    }
+	    /* reset values */
+	    this.xDown = null;
+	    this.yDown = null;                                             
+	};
+
+  /**
+   * Register listeners for various game sequences
+   */
+  registerEventListeners() {
+    window.addEventListener('keydown', this.handleKeyDown.bind(this));
+    window.addEventListener('awardPoints', this.awardPoints.bind(this));
+    window.addEventListener('deathSequence', this.deathSequence.bind(this));
+    window.addEventListener('dotEaten', this.dotEaten.bind(this));
+    window.addEventListener('powerUp', this.powerUp.bind(this));
+    window.addEventListener('eatGhost', this.eatGhost.bind(this));
+    window.addEventListener('restoreGhost', this.restoreGhost.bind(this));
+    window.addEventListener('addTimer', this.addTimer.bind(this));
+    window.addEventListener('removeTimer', this.removeTimer.bind(this));
+    window.addEventListener('releaseGhost', this.releaseGhost.bind(this));
+    window.addEventListener('touchstart', this.handleTouchStart.bind(this), false);        
+    window.addEventListener('touchmove', this.handleTouchMove.bind(this), false);
+
+    const directions = ['up', 'down', 'left', 'right'];
+
+    directions.forEach((direction) => {
+      document
+        .getElementById(`button-${direction}`)
+        .addEventListener('touchstart', () => {
+          this.changeDirection(direction);
+        });
+    });
+  }
+
+  /**
+   * Calls Pacman's changeDirection event if certain conditions are met
+   * @param {({'up'|'down'|'left'|'right'})} direction
+   */
+  changeDirection(direction) {
+    if (this.allowKeyPresses && this.gameEngine.running) {
+      this.pacman.changeDirection(direction, this.allowPacmanMovement);
+    }
+  }
+
+  /**
+   * Calls various class functions depending upon the pressed key
+   * @param {Event} e - The keydown event to evaluate
+   */
+  handleKeyDown(e) {
+    if (e.keyCode === 27) {
+      // ESC key
+      this.handlePauseKey();
+    } else if (e.keyCode === 81) {
+      // Q
+    } else if (this.movementKeys[e.keyCode]) {
+      this.changeDirection(this.movementKeys[e.keyCode]);
+    }
+  }
+
+  /**
+   * Handle behavior for the pause key
+   */
+  handlePauseKey() {
+    if (this.allowPause) {
+      this.allowPause = false;
+
+      setTimeout(() => {
+        if (!this.cutscene) {
+          this.allowPause = true;
+        }
+      }, 500);
+
+      this.gameEngine.changePausedState(this.gameEngine.running);
+
+      const audioCtx = new AudioContext();
+      const pause = new Audio("audio/pause.mp3");
+      const pauseSnd = audioCtx.createMediaElementSource(pause);
+      pauseSnd.connect(audioCtx.destination);
+      pause.play();
+
+      if (this.gameEngine.started) {
+        this.gameUi.style.filter = 'unset';
+        this.movementButtons.style.filter = 'unset';
+        this.pausedText.style.visibility = 'hidden';
+        this.pauseButton.innerHTML = 'pause';
+        this.activeTimers.forEach((timer) => {
+          timer.resume();
+   
+        });
+      } else {
+
+        this.gameUi.style.filter = 'blur(5px)';
+        this.movementButtons.style.filter = 'blur(5px)';
+        this.pausedText.style.visibility = 'visible';
+        this.pauseButton.innerHTML = 'play_arrow';
+        this.activeTimers.forEach((timer) => {
+          timer.pause();
+        });
+      }
+    }
+  }
+
+  /**
+   * Adds points to the player's total
+   * @param {({ detail: { points: Number }})} e - Contains a quantity of points to add
+   */
+  awardPoints(e) {
+    this.points += e.detail.points;
+    this.pointsDisplay.innerText = this.points;
+    var highScore = window.localStorage.getItem('highScore');
+    if (this.points > (highScore || 0)) {
+      highScore = this.points;
+      this.highScoreDisplay.innerText = highScore;
+      localStorage.setItem('highScore', highScore);
+    }
+
+    if (this.points >= 10000 && !this.extraLifeGiven) {
+      this.extraLifeGiven = true;
+
+
+      this.lives += 1;
+      this.updateExtraLivesDisplay();
+    }
+
+    if (e.detail.type === 'fruit') {
+      const left = e.detail.points >= 1000
+        ? this.scaledTileSize * 12.5
+        : this.scaledTileSize * 13;
+      const top = this.scaledTileSize * 16.5;
+      const width = e.detail.points >= 1000
+        ? this.scaledTileSize * 3
+        : this.scaledTileSize * 2;
+      const height = this.scaledTileSize * 2;
+
+      this.displayText({ left, top }, e.detail.points, 2000, width, height);
+
+
+      this.updateFruitDisplay(
+        this.fruit.determineImage('fruit', e.detail.points),
+      );
+    }
+  }
+
+  /**
+   * Animates Pacman's death, subtracts a life, and resets character positions if
+   * the player has remaining lives.
+   */
+  deathSequence() { /*
+    this.allowPause = false;
+    this.cutscene = true;
+
+
+
+
+    this.removeTimer({ detail: { timer: this.fruitTimer } });
+    this.removeTimer({ detail: { timer: this.ghostCycleTimer } });
+    this.removeTimer({ detail: { timer: this.endIdleTimer } });
+    this.removeTimer({ detail: { timer: this.ghostFlashTimer } });
+
+    this.allowKeyPresses = false;
+    this.pacman.moving = false;
+    this.ghosts.forEach((ghost) => {
+      const ghostRef = ghost;
+      ghostRef.moving = false;
+    });
+
+    new Timer(() => {
+      this.ghosts.forEach((ghost) => {
+        const ghostRef = ghost;
+        ghostRef.display = false;
+      });
+      this.pacman.prepDeathAnimation();
+
+
+
+      if (this.lives > 0) {
+        this.lives -= 1;
+
+        new Timer(() => {
+          this.mazeCover.style.visibility = 'visible';
+          new Timer(() => {
+            this.allowKeyPresses = true;
+            this.mazeCover.style.visibility = 'hidden';
+            this.pacman.reset();
+            this.ghosts.forEach((ghost) => {
+              ghost.reset();
+            });
+            this.fruit.hideFruit();
+
+            this.startGameplay();
+          }, 500);
+        }, 2250);
+      } else {
+        var i = 2;
+      //  this.musica(i);
+        this.gameOver();
+      }
+    }, 750);
+    */
+  }
+
+  /**
+   * Displays GAME OVER text and displays the menu so players can play again
+   */
+  gameOver() {
+    var highScore = window.localStorage.getItem('highScore');
+    localStorage.setItem('highScore', highScore);
+    console.log(highScore);
+    assegnaPunteggio();
+
+    new Timer(() => {
+      this.displayText(
+        {
+          left: this.scaledTileSize * 9,
+          top: this.scaledTileSize * 16.5,
+        },
+        'game_over',
+        4000,
+        this.scaledTileSize * 10,
+        this.scaledTileSize * 2,
+      );
+      this.fruit.hideFruit();
+
+      new Timer(() => {
+        this.leftCover.style.left = '0';
+        this.rightCover.style.right = '0';
+
+        setTimeout(() => {
+          this.mainMenu.style.opacity = 1;
+          this.gameStartButton.disabled = false;
+          location.reload();
+        }, 1000);
+      }, 2500);
+    }, 2250);
+  }
+
+  /**
+   * Handle events related to the number of remaining dots
+   */
+  dotEaten() {
+    this.remainingDots -= 1;
+
+
+
+
+
+    if (this.remainingDots === 174 || this.remainingDots === 74) {
+      this.createFruit();
+    }
+
+    if (this.remainingDots === 40 || this.remainingDots === 20) {
+      this.speedUpBlinky();
+    }
+
+    if (this.remainingDots === 0) {
+      this.advanceLevel();
+    }
+  }
+
+  /**
+   * Creates a bonus fruit for ten seconds
+   */
+  createFruit() {
+    this.removeTimer({ detail: { timer: this.fruitTimer } });
+    this.fruit.showFruit(this.fruitPoints[this.level] || 5000);
+    this.fruitTimer = new Timer(() => {
+      this.fruit.hideFruit();
+    }, 10000);
+  }
+
+  /**
+   * Speeds up Blinky and raises the background noise pitch
+   */
+  speedUpBlinky() {
+    this.blinky.speedUp();
+
+    if (this.scaredGhosts.length === 0 && this.eyeGhosts === 0) {
+
+    }
+  }
+
+  /**
+   * Determines the correct siren ambience
+   * @param {Number} remainingDots
+   * @returns {String}
+   */
+  determineSiren(remainingDots) {
+    let sirenNum;
+
+    if (remainingDots > 40) {
+      sirenNum = 1;
+    } else if (remainingDots > 20) {
+      sirenNum = 2;
+    } else {
+      sirenNum = 3;
+    }
+
+    return;
+  }
+
+  /**
+   * Resets the gameboard and prepares the next level
+   */
+  advanceLevel() {
+    this.allowPause = false;
+    this.cutscene = true;
+
+    this.allowKeyPresses = false;
+
+
+    this.entityList.forEach((entity) => {
+      const entityRef = entity;
+      entityRef.moving = false;
+    });
+
+    this.removeTimer({ detail: { timer: this.fruitTimer } });
+    this.removeTimer({ detail: { timer: this.ghostCycleTimer } });
+    this.removeTimer({ detail: { timer: this.endIdleTimer } });
+    this.removeTimer({ detail: { timer: this.ghostFlashTimer } });
+
+    const imgBase = 'app/style//graphics/spriteSheets/maze/';
+
+    new Timer(() => {
+      this.ghosts.forEach((ghost) => {
+        const ghostRef = ghost;
+        ghostRef.display = false;
+      });
+
+      this.mazeImg.src = `${imgBase}maze_white.svg`;
+      new Timer(() => {
+        this.mazeImg.src = `${imgBase}maze_blue.svg`;
+        new Timer(() => {
+          this.mazeImg.src = `${imgBase}maze_white.svg`;
+          new Timer(() => {
+            this.mazeImg.src = `${imgBase}maze_blue.svg`;
+            new Timer(() => {
+              this.mazeImg.src = `${imgBase}maze_white.svg`;
+              new Timer(() => {
+                this.mazeImg.src = `${imgBase}maze_blue.svg`;
+                new Timer(() => {
+                  this.mazeCover.style.visibility = 'visible';
+                  new Timer(() => {
+                    this.mazeCover.style.visibility = 'hidden';
+                    this.level += 1;
+                    this.allowKeyPresses = true;
+                    this.entityList.forEach((entity) => {
+                      const entityRef = entity;
+                      if (entityRef.level) {
+                        entityRef.level = this.level;
+                      }
+                      entityRef.reset();
+                      if (entityRef instanceof Ghost) {
+                        entityRef.resetDefaultSpeed();
+                      }
+                      if (
+                        entityRef instanceof Pickup
+                        && entityRef.type !== 'fruit'
+                      ) {
+                        this.remainingDots += 1;
+                      }
+                    });
+                    this.startGameplay();
+                  }, 500);
+                }, 250);
+              }, 250);
+            }, 250);
+          }, 250);
+        }, 250);
+      }, 250);
+    }, 2000);
+  }
+
+  /**
+   * Flashes ghosts blue and white to indicate the end of the powerup
+   * @param {Number} flashes - Total number of elapsed flashes
+   * @param {Number} maxFlashes - Total flashes to show
+   */
+  flashGhosts(flashes, maxFlashes) {
+    if (flashes === maxFlashes) {
+      this.scaredGhosts.forEach((ghost) => {
+        ghost.endScared();
+      });
+      this.scaredGhosts = [];
+      if (this.eyeGhosts === 0) {
+
+      }
+    } else if (this.scaredGhosts.length > 0) {
+      this.scaredGhosts.forEach((ghost) => {
+        ghost.toggleScaredColor();
+      });
+
+      this.ghostFlashTimer = new Timer(() => {
+        this.flashGhosts(flashes + 1, maxFlashes);
+      }, 250);
+    }
+  }
+
+  /**
+   * Upon eating a power pellet, sets the ghosts to 'scared' mode
+   */
+  powerUp() {
+    if (this.remainingDots !== 0) {
+
+    }
+
+    this.removeTimer({ detail: { timer: this.ghostFlashTimer } });
+
+    this.ghostCombo = 0;
+    this.scaredGhosts = [];
+
+    this.ghosts.forEach((ghost) => {
+      if (ghost.mode !== 'eyes') {
+        this.scaredGhosts.push(ghost);
+      }
+    });
+
+    this.scaredGhosts.forEach((ghost) => {
+      ghost.becomeScared();
+    });
+
+    const powerDuration = Math.max((7 - this.level) * 1000, 0);
+    this.ghostFlashTimer = new Timer(() => {
+      this.flashGhosts(0, 9);
+    }, powerDuration);
+  }
+
+  /**
+   * Determines the quantity of points to give based on the current combo
+   */
+  determineComboPoints() {
+    return 100 * (2 ** this.ghostCombo);
+  }
+
+  /**
+   * Upon eating a ghost, award points and temporarily pause movement
+   * @param {CustomEvent} e - Contains a target ghost object
+   */
+  eatGhost(e) {
+    const pauseDuration = 1000;
+    const { position, measurement } = e.detail.ghost;
+
+    this.pauseTimer({ detail: { timer: this.ghostFlashTimer } });
+    this.pauseTimer({ detail: { timer: this.ghostCycleTimer } });
+    this.pauseTimer({ detail: { timer: this.fruitTimer } });
+
+
+    this.scaredGhosts = this.scaredGhosts.filter(
+      ghost => ghost.name !== e.detail.ghost.name,
+    );
+    this.eyeGhosts += 1;
+
+    this.ghostCombo += 1;
+    const comboPoints = this.determineComboPoints();
+    window.dispatchEvent(
+      new CustomEvent('awardPoints', {
+        detail: {
+          points: comboPoints,
+        },
+      }),
+    );
+    this.displayText(position, comboPoints, pauseDuration, measurement);
+
+    this.allowPacmanMovement = false;
+    this.pacman.display = false;
+    this.pacman.moving = false;
+    e.detail.ghost.display = false;
+    e.detail.ghost.moving = false;
+
+    this.ghosts.forEach((ghost) => {
+      const ghostRef = ghost;
+      ghostRef.animate = false;
+      ghostRef.pause(true);
+      ghostRef.allowCollision = false;
+    });
+
+    new Timer(() => {
+
+      this.resumeTimer({ detail: { timer: this.ghostFlashTimer } });
+      this.resumeTimer({ detail: { timer: this.ghostCycleTimer } });
+      this.resumeTimer({ detail: { timer: this.fruitTimer } });
+      this.allowPacmanMovement = true;
+      this.pacman.display = true;
+      this.pacman.moving = true;
+      e.detail.ghost.display = true;
+      e.detail.ghost.moving = true;
+      this.ghosts.forEach((ghost) => {
+        const ghostRef = ghost;
+        ghostRef.animate = true;
+        ghostRef.pause(false);
+        ghostRef.allowCollision = true;
+      });
+    }, pauseDuration);
+  }
+
+  /**
+   * Decrements the count of "eye" ghosts and updates the ambience
+   */
+  restoreGhost() {
+    this.eyeGhosts -= 1;
+
+    if (this.eyeGhosts === 0) {
+      const sound = this.scaredGhosts.length > 0
+        ? 'power_up'
+        : this.determineSiren(this.remainingDots);
+    }
+  }
+
+  /**
+   * Creates a temporary div to display points on screen
+   * @param {({ left: number, top: number })} position - CSS coordinates to display the points at
+   * @param {Number} amount - Amount of points to display
+   * @param {Number} duration - Milliseconds to display the points before disappearing
+   * @param {Number} width - Image width in pixels
+   * @param {Number} height - Image height in pixels
+   */
+  displayText(position, amount, duration, width, height) {
+    const pointsDiv = document.createElement('div');
+
+    pointsDiv.style.position = 'absolute';
+    pointsDiv.style.backgroundSize = `${width}px`;
+    pointsDiv.style.backgroundImage = 'url(app/style/graphics/'
+        + `spriteSheets/text/${amount}.svg`;
+    pointsDiv.style.width = `${width}px`;
+    pointsDiv.style.height = `${height || width}px`;
+    pointsDiv.style.top = `${position.top}px`;
+    pointsDiv.style.left = `${position.left}px`;
+    pointsDiv.style.zIndex = 2;
+
+    this.mazeDiv.appendChild(pointsDiv);
+
+    new Timer(() => {
+      this.mazeDiv.removeChild(pointsDiv);
+    }, duration);
+  }
+
+  /**
+   * Pushes a Timer to the activeTimers array
+   * @param {({ detail: { timer: Object }})} e
+   */
+  addTimer(e) {
+    this.activeTimers.push(e.detail.timer);
+  }
+
+  /**
+   * Checks if a Timer with a matching ID exists
+   * @param {({ detail: { timer: Object }})} e
+   * @returns {Boolean}
+   */
+  timerExists(e) {
+    return !!(e.detail.timer || {}).timerId;
+  }
+
+  /**
+   * Pauses a timer
+   * @param {({ detail: { timer: Object }})} e
+   */
+  pauseTimer(e) {
+    if (this.timerExists(e)) {
+      e.detail.timer.pause(true);
+    }
+  }
+
+  /**
+   * Resumes a timer
+   * @param {({ detail: { timer: Object }})} e
+   */
+  resumeTimer(e) {
+    if (this.timerExists(e)) {
+      e.detail.timer.resume(true);
+    }
+  }
+
+  /**
+   * Removes a Timer from activeTimers
+   * @param {({ detail: { timer: Object }})} e
+   */
+  removeTimer(e) {
+    if (this.timerExists(e)) {
+      window.clearTimeout(e.detail.timer.timerId);
+      this.activeTimers = this.activeTimers.filter(
+        timer => timer.timerId !== e.detail.timer.timerId,
+      );
+    }
+  }
+}
+
+
+async function controlloUtente() {
+  // Make the initial query
+  var text=document.getElementById('name');
+  var migliore = "0";
+  var highScore = "0";
+  const query = await db.collection("players").where("name", "==", text.value).get();
+
+  if (!query.empty) {
+      const snapshot = query.docs[0];
+      const data = snapshot.data();
+      let migliore  = `${data.score}`;
+      var highScore = migliore;
+      console.log("Vecchio utente, assegno punteggio ", highScore);
+      window.localStorage.setItem('highScore', highScore);
+      console.log(highScore);
+      console.log(data);
+  } else {
+      var highScore = 0;
+      window.localStorage.setItem('highScore', highScore);
+      console.log("Nuovo utente, assegno punteggio ", highScore);
+  }
+
+}
+
+async function assegnaPunteggio() {
+  // Make the initial query
+
+  var hiscore = window.localStorage.getItem('highScore');
+  var text=document.getElementById('name');
+  var x = parseInt(hiscore);
+
+  const query = await db.collection("players").where("name", "==", text.value).get();
+
+  if (!query.empty) {
+      const snapshot = query.docs[0];
+      const data = snapshot.data();
+      let migliore  = `${data.score}`;
+      console.log("Nome", text.value, "punteggio", hiscore, "cloud", migliore, "x", x);
+      if (x > migliore){
+          console.log("Miglior punteggio superato");
+          db.collection("players").where("name", "==", text.value)
+          .get()
+          .then((querySnapshot) => {
+              querySnapshot.forEach((doc) => {
+              // doc.data() is never undefined for query doc snapshots
+                  db.collection("players").doc(doc.id).update({
+                      score: x,
+                  })
+                  console.log("Dati precedenti aggiornati");
+              });
+          })
+      }else{
+          console.log("Miglior punteggio non superato");
+      }
+  } else {
+      if( document.getElementById("name").value != ''){
+          db.collection("players").add({
+              name: text.value,
+              score: x,
+          })
+          .then((docRef) => {
+              console.log("Document written with ID: ", docRef.id);
+          })
+          .catch((error) => {
+          console.error("Error adding document: ", error);
+          });
+      } 
+      console.log("Nuovo utente, assegno nome", text.value, "e punteggio ", hiscore);
+  }
+}
+
+
+
+
+class GameEngine {
+  constructor(maxFps, entityList) {
+    this.fpsDisplay = document.getElementById('fps-display');
+    this.elapsedMs = 0;
+    this.lastFrameTimeMs = 0;
+    this.entityList = entityList;
+    this.maxFps = maxFps;
+    this.timestep = 1000 / this.maxFps;
+    this.fps = this.maxFps;
+    this.framesThisSecond = 0;
+    this.lastFpsUpdate = 0;
+    this.frameId = 0;
+    this.running = false;
+    this.started = false;
+  }
+
+  /**
+   * Toggles the paused/running status of the game
+   * @param {Boolean} running - Whether the game is currently in motion
+   */
+  changePausedState(running) {
+    if (running) {
+      this.stop();
+    } else {
+      this.start();
+    }
+  }
+
+  /**
+   * Updates the on-screen FPS counter once per second
+   * @param {number} timestamp - The amount of MS which has passed since starting the game engine
+   */
+  updateFpsDisplay(timestamp) {
+    if (timestamp > this.lastFpsUpdate + 1000) {
+      this.fps = (this.framesThisSecond + this.fps) / 2;
+      this.lastFpsUpdate = timestamp;
+      this.framesThisSecond = 0;
+    }
+    this.framesThisSecond += 1;
+    this.fpsDisplay.textContent = `${Math.round(this.fps)} FPS`;
+  }
+
+  /**
+   * Calls the draw function for every member of the entityList
+   * @param {number} interp - The animation accuracy as a percentage
+   * @param {Array} entityList - List of entities to be used throughout the game
+   */
+  draw(interp, entityList) {
+    entityList.forEach((entity) => {
+      if (typeof entity.draw === 'function') {
+        entity.draw(interp);
+      }
+    });
+  }
+
+  /**
+   * Calls the update function for every member of the entityList
+   * @param {number} elapsedMs - The amount of MS that have passed since the last update
+   * @param {Array} entityList - List of entities to be used throughout the game
+   */
+  update(elapsedMs, entityList) {
+    entityList.forEach((entity) => {
+      if (typeof entity.update === 'function') {
+        entity.update(elapsedMs);
+      }
+    });
+  }
+
+  /**
+   * In the event that a ton of unsimulated frames pile up, discard all of these frames
+   * to prevent crashing the game
+   */
+  panic() {
+    this.elapsedMs = 0;
+  }
+
+  /**
+   * Draws an initial frame, resets a few tracking variables related to animation, and calls
+   * the mainLoop function to start the engine
+   */
+  start() {
+    if (!this.started) {
+      this.started = true;
+
+      this.frameId = requestAnimationFrame((firstTimestamp) => {
+        this.draw(1, []);
+        this.running = true;
+        this.lastFrameTimeMs = firstTimestamp;
+        this.lastFpsUpdate = firstTimestamp;
+        this.framesThisSecond = 0;
+
+        this.frameId = requestAnimationFrame((timestamp) => {
+          this.mainLoop(timestamp);
+        });
+      });
+    }
+  }
+
+  /**
+   * Stops the engine and cancels the current animation frame
+   */
+  stop() {
+    this.running = false;
+    this.started = false;
+    cancelAnimationFrame(this.frameId);
+  }
+
+  /**
+   * The loop which will process all necessary frames to update the game's entities
+   * prior to animating them
+   */
+  processFrames() {
+    let numUpdateSteps = 0;
+    while (this.elapsedMs >= this.timestep) {
+      this.update(this.timestep, this.entityList);
+      this.elapsedMs -= this.timestep;
+      numUpdateSteps += 1;
+      if (numUpdateSteps >= this.maxFps) {
+        this.panic();
+        break;
+      }
+    }
+  }
+
+  /**
+   * A single cycle of the engine which checks to see if enough time has passed, and, if so,
+   * will kick off the loops to update and draw the game's entities.
+   * @param {number} timestamp - The amount of MS which has passed since starting the game engine
+   */
+  engineCycle(timestamp) {
+    if (timestamp < this.lastFrameTimeMs + (1000 / this.maxFps)) {
+      this.frameId = requestAnimationFrame((nextTimestamp) => {
+        this.mainLoop(nextTimestamp);
+      });
+      return;
+    }
+
+    this.elapsedMs += timestamp - this.lastFrameTimeMs;
+    this.lastFrameTimeMs = timestamp;
+    this.updateFpsDisplay(timestamp);
+    this.processFrames();
+    this.draw(this.elapsedMs / this.timestep, this.entityList);
+
+    this.frameId = requestAnimationFrame((nextTimestamp) => {
+      this.mainLoop(nextTimestamp);
+    });
+  }
+
+  /**
+   * The endless loop which will kick off engine cycles so long as the game is running
+   * @param {number} timestamp - The amount of MS which has passed since starting the game engine
+   */
+  mainLoop(timestamp) {
+    this.engineCycle(timestamp);
+  }
+}
+
+
 class Ghost {
   constructor(
     scaledTileSize, mazeArray, pacman, name, level, characterUtil, blinky,
@@ -1108,1876 +2776,6 @@ class Pacman {
 }
 
 
-class GameCoordinator {
-  constructor() {
-    this.gameUi = document.getElementById('game-ui');
-    this.rowTop = document.getElementById('row-top');
-    this.mazeDiv = document.getElementById('maze');
-    this.mazeImg = document.getElementById('maze-img');
-    this.mazeCover = document.getElementById('maze-cover');
-    this.pointsDisplay = document.getElementById('points-display');
-    this.nomeInsta = document.getElementById('nomeUtente');
-    this.highScoreDisplay = document.getElementById('high-score-display');
-    var highScore = "0";
-    this.extraLivesDisplay = document.getElementById('extra-lives');
-    this.fruitDisplay = document.getElementById('fruit-display');
-    this.mainMenu = document.getElementById('main-menu-container');
-    this.gameStartButton = document.getElementById('game-start');
-    this.salvaEdEsci = document.getElementById('salva');
-    this.leftCover = document.getElementById('left-cover');
-    this.rightCover = document.getElementById('right-cover');
-    this.pausedText = document.getElementById('paused-text');
-    this.bottomRow = document.getElementById('bottom-row');
-    this.movementButtons = document.getElementById('movement-buttons');
-
-    this.mazeArray = [
-      ['XXXXXXXXXXXXXXXXXXXXXXXXXXXX'],
-      ['XooooooooooooXXooooooooooooX'],
-      ['XoXXXXoXXXXXoXXoXXXXXoXXXXoX'],
-      ['XOXXXXoXXXXXoXXoXXXXXoXXXXOX'],
-      ['XoXXXXoXXXXXoXXoXXXXXoXXXXoX'],
-      ['XooooooooooooooooooooooooooX'],
-      ['XoXXXXoXXoXXXXXXXXoXXoXXXXoX'],
-      ['XoXXXXoXXoXXXXXXXXoXXoXXXXoX'],
-      ['XooooooXXooooXXooooXXooooooX'],
-      ['XXXXXXoXXXXX XX XXXXXoXXXXXX'],
-      ['XXXXXXoXXXXX XX XXXXXoXXXXXX'],
-      ['XXXXXXoXX          XXoXXXXXX'],
-      ['XXXXXXoXX XXXXXXXX XXoXXXXXX'],
-      ['XXXXXXoXX X      X XXoXXXXXX'],
-      ['      o   X      X   o      '],
-      ['XXXXXXoXX X      X XXoXXXXXX'],
-      ['XXXXXXoXX XXXXXXXX XXoXXXXXX'],
-      ['XXXXXXoXX          XXoXXXXXX'],
-      ['XXXXXXoXX XXXXXXXX XXoXXXXXX'],
-      ['XXXXXXoXX XXXXXXXX XXoXXXXXX'],
-      ['XooooooooooooXXooooooooooooX'],
-      ['XoXXXXoXXXXXoXXoXXXXXoXXXXoX'],
-      ['XoXXXXoXXXXXoXXoXXXXXoXXXXoX'],
-      ['XOooXXooooooo  oooooooXXooOX'],
-      ['XXXoXXoXXoXXXXXXXXoXXoXXoXXX'],
-      ['XXXoXXoXXoXXXXXXXXoXXoXXoXXX'],
-      ['XooooooXXooooXXooooXXooooooX'],
-      ['XoXXXXXXXXXXoXXoXXXXXXXXXXoX'],
-      ['XoXXXXXXXXXXoXXoXXXXXXXXXXoX'],
-      ['XooooooooooooooooooooooooooX'],
-      ['XXXXXXXXXXXXXXXXXXXXXXXXXXXX'],
-    ];
-
-    this.maxFps = 120;
-    this.tileSize = 8;
-    this.scale = this.determineScale(1);
-    this.scaledTileSize = this.tileSize * this.scale;
-    this.firstGame = true;
-    this.xDown = null;                                                        
-    this.yDown = null;
-
-
-
-
-    this.movementKeys = {
-      // WASD
-      87: 'up',
-      83: 'down',
-      65: 'left',
-      68: 'right',
-
-      // Arrow Keys
-      38: 'up',
-      40: 'down',
-      37: 'left',
-      39: 'right',
-    };
-
-    this.fruitPoints = {
-      1: 100,
-      2: 300,
-      3: 500,
-      4: 700,
-      5: 1000,
-      6: 2000,
-      7: 3000,
-      8: 5000,
-    };
-
-    this.mazeArray.forEach((row, rowIndex) => {
-      this.mazeArray[rowIndex] = row[0].split('');
-    });
-
-    this.salvaEdEsci.addEventListener(
-      'click',
-      this.SalvaGioco.bind(this),
-    );
-    this.gameStartButton.addEventListener(
-      'click',
-      this.startButtonClick.bind(this),
-    );
-  
-
-
-    const head = document.getElementsByTagName('head')[0];
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'build/app.css';
-
-    link.onload = this.preloadAssets.bind(this);
-
-    head.appendChild(link);
-  }
-
-  /**
-   * Recursive method which determines the largest possible scale the game's graphics can use
-   * @param {Number} scale
-   */
-  determineScale(scale) {
-    const availableScreenHeight = Math.min(
-      document.documentElement.clientHeight,
-      window.innerHeight || 0,
-    );
-    const availableScreenWidth = Math.min(
-      document.documentElement.clientWidth,
-      window.innerWidth || 0,
-    );
-    const scaledTileSize = this.tileSize * scale;
-
-    // The original Pac-Man game leaves 5 tiles of height (3 above, 2 below) surrounding the
-    // maze for the UI. See app\style\graphics\spriteSheets\references\mazeGridSystemReference.png
-    // for reference.
-    const mazeTileHeight = this.mazeArray.length + 5;
-    const mazeTileWidth = this.mazeArray[0][0].split('').length;
-
-    if (
-      scaledTileSize * mazeTileHeight < availableScreenHeight
-      && scaledTileSize * mazeTileWidth < availableScreenWidth
-    ) {
-      return this.determineScale(scale + 1);
-    }
-
-    return scale - 1;
-  }
-
-
-
-
-
-
-
-  /**
-   * Reveals the game underneath the loading covers and starts gameplay
-   */
-
-  SalvaGioco(){
-    this.allowPause = false;
-    this.cutscene = true;
-
-    var i = 2;
-    // this.musica(i);
-
-    this.removeTimer({ detail: { timer: this.fruitTimer } });
-    this.removeTimer({ detail: { timer: this.ghostCycleTimer } });
-    this.removeTimer({ detail: { timer: this.endIdleTimer } });
-    this.removeTimer({ detail: { timer: this.ghostFlashTimer } });
-
-    this.allowKeyPresses = false;
-    this.pacman.moving = false;
-    this.ghosts.forEach((ghost) => {
-      const ghostRef = ghost;
-      ghostRef.moving = false;
-    });
-
-    new Timer(() => {
-      this.ghosts.forEach((ghost) => {
-        const ghostRef = ghost;
-        ghostRef.display = false;
-      });
-      this.pacman.prepDeathAnimation();
-
-
-
-
-
-      var highScore = window.localStorage.getItem('highScore');
-      localStorage.setItem('highScore', highScore);
-      console.log(highScore);
-      assegnaPunteggio();
-  
-      new Timer(() => {
-        this.displayText(
-          {
-            left: this.scaledTileSize * 9,
-            top: this.scaledTileSize * 16.5,
-          },
-          'game_over',
-          4000,
-          this.scaledTileSize * 10,
-          this.scaledTileSize * 2,
-        );
-        this.fruit.hideFruit();
-        this.salvaEdEsci.disabled = true;
-  
-        new Timer(() => {
-          this.leftCover.style.left = '0';
-          this.rightCover.style.right = '0';
-  
-          setTimeout(() => {
-            this.mainMenu.style.opacity = 1;
-            this.gameStartButton.disabled = false;
-            location.reload();
-          }, 1000);
-        }, 2500);
-      }, 2250);
-
-
-
-    }, 750);
-  }
-  
-  startButtonClick() {
-    controlloUtente();
-    this.gameStartButton.disabled = true;
-    this.oraInizia();
-  }
-
-/*
-    INIZIALIZZAZIONE DI TUTTI I SUONI DEL GIOCO
-*/
-
-
-
-/*
-FINE INIZIALIZZAZIONE DEI SUONI
-*/
-
-  oraInizia(){
-    setTimeout(()=>{
-      console.log("inside timeout");
-      var highScore = window.localStorage.getItem('highScore');
-      console.log(highScore);
-      this.leftCover.style.left = '-50%';
-      this.rightCover.style.right = '-50%';
-      this.mainMenu.style.opacity = 0;
-
-  
-      setTimeout(() => {
-        this.mainMenu.style.visibility = 'hidden';
-      }, 1000);
-      this.reset();
-      if (this.firstGame) {
-        this.firstGame = false;
-        this.init();
-      }
-      this.startGameplay(true);
-    },300);
-  }
-
-  /**
-   * Toggles the master volume for the soundManager, and saves the preference to storage
-   */
-
-
-  /**
-   * Sets the icon for the sound button
-   */
-
-
-  /**
-   * Displays an error message in the event assets are unable to download
-   */
-  displayErrorMessage() {
-    const loadingContainer = document.getElementById('loading-container');
-    const errorMessage = document.getElementById('error-message');
-    loadingContainer.style.opacity = 0;
-    setTimeout(() => {
-      loadingContainer.remove();
-      errorMessage.style.opacity = 1;
-      errorMessage.style.visibility = 'visible';
-    }, 1500);
-  }
-
-  /**
-   * Load all assets into a hidden Div to pre-load them into memory.
-   * There is probably a better way to read all of these file names.
-   */
-  preloadAssets() {
-    return new Promise((resolve) => {
-      const loadingContainer = document.getElementById('loading-container');
-      const loadingPacman = document.getElementById('loading-pacman');
-      const loadingDotMask = document.getElementById('loading-dot-mask');
-
-      const imgBase = 'app/style/graphics/spriteSheets/';
-      const imgSources = [
-        // Pacman
-        `${imgBase}characters/pacman/arrow_down.svg`,
-        `${imgBase}characters/pacman/arrow_left.svg`,
-        `${imgBase}characters/pacman/arrow_right.svg`,
-        `${imgBase}characters/pacman/arrow_up.svg`,
-        `${imgBase}characters/pacman/pacman_death.svg`,
-        `${imgBase}characters/pacman/pacman_error.svg`,
-        `${imgBase}characters/pacman/pacman_down.svg`,
-        `${imgBase}characters/pacman/pacman_left.svg`,
-        `${imgBase}characters/pacman/pacman_right.svg`,
-        `${imgBase}characters/pacman/pacman_up.svg`,
-
-        // Blinky
-        `${imgBase}characters/ghosts/blinky/blinky_down_angry.svg`,
-        `${imgBase}characters/ghosts/blinky/blinky_down_annoyed.svg`,
-        `${imgBase}characters/ghosts/blinky/blinky_down.svg`,
-        `${imgBase}characters/ghosts/blinky/blinky_left_angry.svg`,
-        `${imgBase}characters/ghosts/blinky/blinky_left_annoyed.svg`,
-        `${imgBase}characters/ghosts/blinky/blinky_left.svg`,
-        `${imgBase}characters/ghosts/blinky/blinky_right_angry.svg`,
-        `${imgBase}characters/ghosts/blinky/blinky_right_annoyed.svg`,
-        `${imgBase}characters/ghosts/blinky/blinky_right.svg`,
-        `${imgBase}characters/ghosts/blinky/blinky_up_angry.svg`,
-        `${imgBase}characters/ghosts/blinky/blinky_up_annoyed.svg`,
-        `${imgBase}characters/ghosts/blinky/blinky_up.svg`,
-
-        // Clyde
-        `${imgBase}characters/ghosts/clyde/clyde_down.svg`,
-        `${imgBase}characters/ghosts/clyde/clyde_left.svg`,
-        `${imgBase}characters/ghosts/clyde/clyde_right.svg`,
-        `${imgBase}characters/ghosts/clyde/clyde_up.svg`,
-
-        // Inky
-        `${imgBase}characters/ghosts/inky/inky_down.svg`,
-        `${imgBase}characters/ghosts/inky/inky_left.svg`,
-        `${imgBase}characters/ghosts/inky/inky_right.svg`,
-        `${imgBase}characters/ghosts/inky/inky_up.svg`,
-
-        // Pinky
-        `${imgBase}characters/ghosts/pinky/pinky_down.svg`,
-        `${imgBase}characters/ghosts/pinky/pinky_left.svg`,
-        `${imgBase}characters/ghosts/pinky/pinky_right.svg`,
-        `${imgBase}characters/ghosts/pinky/pinky_up.svg`,
-
-        // Ghosts Common
-        `${imgBase}characters/ghosts/eyes_down.svg`,
-        `${imgBase}characters/ghosts/eyes_left.svg`,
-        `${imgBase}characters/ghosts/eyes_right.svg`,
-        `${imgBase}characters/ghosts/eyes_up.svg`,
-        `${imgBase}characters/ghosts/scared_blue.svg`,
-        `${imgBase}characters/ghosts/scared_white.svg`,
-
-        // Dots
-        `${imgBase}pickups/pacdot.svg`,
-        `${imgBase}pickups/powerPellet.svg`,
-
-        // Fruit
-        `${imgBase}pickups/apple.svg`,
-        `${imgBase}pickups/bell.svg`,
-        `${imgBase}pickups/cherry.svg`,
-        `${imgBase}pickups/galaxian.svg`,
-        `${imgBase}pickups/key.svg`,
-        `${imgBase}pickups/melon.svg`,
-        `${imgBase}pickups/orange.svg`,
-        `${imgBase}pickups/strawberry.svg`,
-
-        // Text
-        `${imgBase}text/ready.svg`,
-
-        // Points
-        `${imgBase}text/100.svg`,
-        `${imgBase}text/200.svg`,
-        `${imgBase}text/300.svg`,
-        `${imgBase}text/400.svg`,
-        `${imgBase}text/500.svg`,
-        `${imgBase}text/700.svg`,
-        `${imgBase}text/800.svg`,
-        `${imgBase}text/1000.svg`,
-        `${imgBase}text/1600.svg`,
-        `${imgBase}text/2000.svg`,
-        `${imgBase}text/3000.svg`,
-        `${imgBase}text/5000.svg`,
-
-        // Maze
-        `${imgBase}maze/maze_blue.svg`,
-
-        // Misc
-        'app/style/graphics/extra_life.png',
-      ];
-
-      const audioBase = 'app/style/audio/';
-      const audioSources = [
-        `${audioBase}game_start.mp3`,
-        `${audioBase}pause.mp3`,
-        `${audioBase}pause_beat.mp3`,
-        `${audioBase}power_up.mp3`,
-        `${audioBase}extra_life.mp3`,
-        `${audioBase}eyes.mp3`,
-        `${audioBase}eat_ghost.mp3`,
-        `${audioBase}death.mp3`,
-        `${audioBase}fruit.mp3`,
-        `${audioBase}dot_1.mp3`,
-        `${audioBase}dot_2.mp3`,
-      ];
-
-      const totalSources = imgSources.length + audioSources.length;
-      this.remainingSources = totalSources;
-
-      loadingPacman.style.left = '0';
-      loadingDotMask.style.width = '0';
-
-      Promise.all([
-        this.createElements(imgSources, 'img', totalSources, this),
-        this.createElements(audioSources, 'audio', totalSources, this),
-      ])
-        .then(() => {
-          loadingContainer.style.opacity = 0;
-          resolve();
-
-          setTimeout(() => {
-            loadingContainer.remove();
-            this.mainMenu.style.opacity = 1;
-            this.mainMenu.style.visibility = 'visible';
-          }, 1500);
-        })
-        .catch(this.displayErrorMessage);
-    });
-  }
-
-  /**
-   * Iterates through a list of sources and updates the loading bar as the assets load in
-   * @param {String[]} sources
-   * @param {('img'|'audio')} type
-   * @param {Number} totalSources
-   * @param {Object} gameCoord
-   * @returns {Promise}
-   */
-  createElements(sources, type, totalSources, gameCoord) {
-    const loadingContainer = document.getElementById('loading-container');
-    const preloadDiv = document.getElementById('preload-div');
-    const loadingPacman = document.getElementById('loading-pacman');
-    const containerWidth = loadingContainer.scrollWidth
-      - loadingPacman.scrollWidth;
-    const loadingDotMask = document.getElementById('loading-dot-mask');
-
-    const gameCoordRef = gameCoord;
-
-    return new Promise((resolve, reject) => {
-      let loadedSources = 0;
-
-      sources.forEach((source) => {
-        const element = type === 'img' ? new Image() : new Audio();
-        preloadDiv.appendChild(element);
-
-        const elementReady = () => {
-          gameCoordRef.remainingSources -= 1;
-          loadedSources += 1;
-          const percent = 1 - gameCoordRef.remainingSources / totalSources;
-          loadingPacman.style.left = `${percent * containerWidth}px`;
-          loadingDotMask.style.width = loadingPacman.style.left;
-
-          if (loadedSources === sources.length) {
-            resolve();
-          }
-        };
-
-        if (type === 'img') {
-          element.onload = elementReady;
-          element.onerror = reject;
-        } else {
-          element.addEventListener('canplaythrough', elementReady);
-          element.onerror = reject;
-        }
-
-        element.src = source;
-
-        if (type === 'audio') {
-          element.load();
-        }
-      });
-    });
-  }
-
-  /**
-   * Resets gameCoordinator values to their default states
-   */
-  reset() {
-    this.activeTimers = [];
-    this.points = 0;
-    this.level = 1;
-    this.lives = 2;
-    this.extraLifeGiven = false;
-    this.remainingDots = 0;
-    this.allowKeyPresses = true;
-    this.allowPacmanMovement = false;
-    this.allowPause = false;
-    this.cutscene = true;
-
-    if (this.firstGame) {
-      setInterval(() => {
-        this.collisionDetectionLoop();
-      }, 500);
-
-      this.pacman = new Pacman(
-        this.scaledTileSize,
-        this.mazeArray,
-        new CharacterUtil(),
-      );
-      this.blinky = new Ghost(
-        this.scaledTileSize,
-        this.mazeArray,
-        this.pacman,
-        'blinky',
-        this.level,
-        new CharacterUtil(),
-      );
-      this.pinky = new Ghost(
-        this.scaledTileSize,
-        this.mazeArray,
-        this.pacman,
-        'pinky',
-        this.level,
-        new CharacterUtil(),
-      );
-      this.inky = new Ghost(
-        this.scaledTileSize,
-        this.mazeArray,
-        this.pacman,
-        'inky',
-        this.level,
-        new CharacterUtil(),
-        this.blinky,
-      );
-      this.clyde = new Ghost(
-        this.scaledTileSize,
-        this.mazeArray,
-        this.pacman,
-        'clyde',
-        this.level,
-        new CharacterUtil(),
-      );
-      this.fruit = new Pickup(
-        'fruit',
-        this.scaledTileSize,
-        13.5,
-        17,
-        this.pacman,
-        this.mazeDiv,
-        100,
-      );
-    }
-
-    this.entityList = [
-      this.pacman,
-      this.blinky,
-      this.pinky,
-      this.inky,
-      this.clyde,
-      this.fruit,
-    ];
-
-    this.ghosts = [this.blinky, this.pinky, this.inky, this.clyde];
-
-    this.scaredGhosts = [];
-    this.eyeGhosts = 0;
-
-    if (this.firstGame) {
-      this.drawMaze(this.mazeArray, this.entityList);
-      this.setUiDimensions();
-    } else {
-      this.pacman.reset();
-      this.ghosts.forEach((ghost) => {
-        ghost.reset(true);
-      });
-      this.pickups.forEach((pickup) => {
-        if (pickup.type !== 'fruit') {
-          this.remainingDots += 1;
-          pickup.reset();
-          this.entityList.push(pickup);
-        }
-      });
-    }
-
-    var record = window.localStorage.getItem('highScore');
-    console.log(record);
-    this.pointsDisplay.innerHTML = '00';
-    
-    this.highScoreDisplay.innerHTML = record || '00';
-    var text=document.getElementById('name');
-    if(text.value == ""){
-      this.nomeInsta.innerHTML = "Partita locale";
-    }else{
-      this.nomeInsta.innerHTML = text.value + ":";
-    }
-  
-    console.log(record);
-    this.clearDisplay(this.fruitDisplay);
-
-    const volumePreference = parseInt(
-      localStorage.getItem('volumePreference') || 1,
-      10,
-    );
-
-  }
-
-  /**
-   * Calls necessary setup functions to start the game
-   */
-  init() {
-    this.registerEventListeners();
-    this.gameEngine = new GameEngine(this.maxFps, this.entityList);
-    this.gameEngine.start();
-  }
-
-  /**
-   * Adds HTML elements to draw on the webpage by iterating through the 2D maze array
-   * @param {Array} mazeArray - 2D array representing the game board
-   * @param {Array} entityList - List of entities to be used throughout the game
-   */
-  drawMaze(mazeArray, entityList) {
-    this.pickups = [this.fruit];
-
-    this.mazeDiv.style.height = `${this.scaledTileSize * 31}px`;
-    this.mazeDiv.style.width = `${this.scaledTileSize * 28}px`;
-    this.gameUi.style.width = `${this.scaledTileSize * 28}px`;
-    this.bottomRow.style.minHeight = `${this.scaledTileSize * 2}px`;
-    this.dotContainer = document.getElementById('dot-container');
-
-    mazeArray.forEach((row, rowIndex) => {
-      row.forEach((block, columnIndex) => {
-        if (block === 'o' || block === 'O') {
-          const type = block === 'o' ? 'pacdot' : 'powerPellet';
-          const points = block === 'o' ? 10 : 50;
-          const dot = new Pickup(
-            type,
-            this.scaledTileSize,
-            columnIndex,
-            rowIndex,
-            this.pacman,
-            this.dotContainer,
-            points,
-          );
-
-          entityList.push(dot);
-          this.pickups.push(dot);
-          this.remainingDots += 1;
-        }
-      });
-    });
-  }
-
-  setUiDimensions() {
-    this.gameUi.style.fontSize = `${this.scaledTileSize}px`;
-    this.rowTop.style.marginBottom = `${this.scaledTileSize}px`;
-  }
-
-  /**
-   * Loop which periodically checks which pickups are nearby Pacman.
-   * Pickups which are far away will not be considered for collision detection.
-   */
-  collisionDetectionLoop() {
-    if (this.pacman.position) {
-      const maxDistance = this.pacman.velocityPerMs * 750;
-      const pacmanCenter = {
-        x: this.pacman.position.left + this.scaledTileSize,
-        y: this.pacman.position.top + this.scaledTileSize,
-      };
-
-      // Set this flag to TRUE to see how two-phase collision detection works!
-      const debugging = false;
-
-      this.pickups.forEach((pickup) => {
-        pickup.checkPacmanProximity(maxDistance, pacmanCenter, debugging);
-      });
-    }
-  }
-
-
-
-  musica(i){
-    
-    var ost,sil;
-    
-    sil = new Audio('/AcidMan/audio/morte.mp3');
-    this.ost = new Audio('/AcidMan/audio/ost.mp3');
-
-    if(i == 1){  
-      this.ost.play();
-      this.ost.loop = true;
-    }else{
-      this.ost.pause();
-      this.ost.currentTime = 0;
-      sil.play();
-    }
-  }
-
-  /**
-   * Displays "Ready!" and allows Pacman to move after a breif delay
-   * @param {Boolean} initialStart - Special condition for the game's beginning
-   */
-  startGameplay(initialStart) {
-    if (initialStart) {
-    //  var i = 1;
-    //  this.musica(i);
-    var ost;
-    ost = new Audio('/AcidMan/audio/ost.mp3');
-    ost.loop = true;
-    ost.play();
-    }
-
-    this.scaredGhosts = [];
-    this.eyeGhosts = 0;
-    this.allowPacmanMovement = false;
-
-    const left = this.scaledTileSize * 11;
-    const top = this.scaledTileSize * 16.5;
-    const duration = initialStart ? 4500 : 2000;
-    const width = this.scaledTileSize * 6;
-    const height = this.scaledTileSize * 2;
-
-    this.displayText({ left, top }, 'ready', duration, width, height);
-    this.updateExtraLivesDisplay();
-
-    new Timer(() => {
-      this.allowPause = true;
-      this.cutscene = false;
-
-      this.allowPacmanMovement = true;
-      this.pacman.moving = true;
-
-      this.ghosts.forEach((ghost) => {
-        const ghostRef = ghost;
-        ghostRef.moving = true;
-      });
-
-      this.ghostCycle('scatter');
-
-      this.idleGhosts = [this.pinky, this.inky, this.clyde];
-      this.releaseGhost();
-    }, duration);
-  }
-
-  /**
-   * Clears out all children nodes from a given display element
-   * @param {String} display
-   */
-  clearDisplay(display) {
-    while (display.firstChild) {
-      display.removeChild(display.firstChild);
-    }
-  }
-
-  /**
-   * Displays extra life images equal to the number of remaining lives
-   */
-  updateExtraLivesDisplay() {
-    this.clearDisplay(this.extraLivesDisplay);
-
-    for (let i = 0; i < this.lives; i += 1) {
-      const extraLifePic = document.createElement('img');
-      extraLifePic.setAttribute('src', 'app/style/graphics/extra_life.svg');
-      extraLifePic.style.height = `${this.scaledTileSize * 2}px`;
-      this.extraLivesDisplay.appendChild(extraLifePic);
-    }
-  }
-
-  /**
-   * Displays a rolling log of the seven most-recently eaten fruit
-   * @param {String} rawImageSource
-   */
-  updateFruitDisplay(rawImageSource) { /*
-    const parsedSource = rawImageSource.slice(
-      rawImageSource.indexOf('(') + 1,
-      rawImageSource.indexOf(')'),
-    );
-
-    if (this.fruitDisplay.children.length === 7) {
-      this.fruitDisplay.removeChild(this.fruitDisplay.firstChild);
-    }
-
-    const fruitPic = document.createElement('img');
-    fruitPic.setAttribute('src', parsedSource);
-    fruitPic.style.height = `${this.scaledTileSize * 2}px`;
-    this.fruitDisplay.appendChild(fruitPic); */
-  }
-
-  /**
-   * Cycles the ghosts between 'chase' and 'scatter' mode
-   * @param {('chase'|'scatter')} mode
-   */
-  ghostCycle(mode) {
-    const delay = mode === 'scatter' ? 7000 : 20000;
-    const nextMode = mode === 'scatter' ? 'chase' : 'scatter';
-
-    this.ghostCycleTimer = new Timer(() => {
-      this.ghosts.forEach((ghost) => {
-        ghost.changeMode(nextMode);
-      });
-
-      this.ghostCycle(nextMode);
-    }, delay);
-  }
-
-  /**
-   * Releases a ghost from the Ghost House after a delay
-   */
-  releaseGhost() {
-    if (this.idleGhosts.length > 0) {
-      const delay = Math.max((8 - (this.level - 1) * 4) * 1000, 0);
-
-      this.endIdleTimer = new Timer(() => {
-        this.idleGhosts[0].endIdleMode();
-        this.idleGhosts.shift();
-      }, delay);
-    }
-  }
-
-	getTouches(evt) {
-	  return evt.touches ||             // browser API
-	         evt.originalEvent.touches; // jQuery
-	}                                                     
-
-	handleTouchStart(evt) {
-	    const firstTouch = this.getTouches(evt)[0];                                      
-	    this.xDown = firstTouch.clientX;                                      
-	    this.yDown = firstTouch.clientY;                                      
-	};                                                
-
-	handleTouchMove(evt) {
-	    if ( ! this.xDown || ! this.yDown ) {
-	        return;
-	    }
-
-	    var xUp = evt.touches[0].clientX;                                    
-	    var yUp = evt.touches[0].clientY;
-
-	    var xDiff = this.xDown - xUp;
-	    var yDiff = this.yDown - yUp;
-
-	    if ( Math.abs( xDiff ) > Math.abs( yDiff ) ) {/*most significant*/
-	        if ( xDiff > 0 ) {
-	      		this.changeDirection("left");
-	        } else {
-	      		this.changeDirection("right");
-	        }                       
-	    } else {
-	        if ( yDiff > 0 ) {
-	      		this.changeDirection("up");
-	        } else { 
-	      		this.changeDirection("down");
-	        }                                                                 
-	    }
-	    /* reset values */
-	    this.xDown = null;
-	    this.yDown = null;                                             
-	};
-
-  /**
-   * Register listeners for various game sequences
-   */
-  registerEventListeners() {
-    window.addEventListener('keydown', this.handleKeyDown.bind(this));
-    window.addEventListener('awardPoints', this.awardPoints.bind(this));
-    window.addEventListener('deathSequence', this.deathSequence.bind(this));
-    window.addEventListener('dotEaten', this.dotEaten.bind(this));
-    window.addEventListener('powerUp', this.powerUp.bind(this));
-    window.addEventListener('eatGhost', this.eatGhost.bind(this));
-    window.addEventListener('restoreGhost', this.restoreGhost.bind(this));
-    window.addEventListener('addTimer', this.addTimer.bind(this));
-    window.addEventListener('removeTimer', this.removeTimer.bind(this));
-    window.addEventListener('releaseGhost', this.releaseGhost.bind(this));
-    window.addEventListener('touchstart', this.handleTouchStart.bind(this), false);        
-    window.addEventListener('touchmove', this.handleTouchMove.bind(this), false);
-
-    const directions = ['up', 'down', 'left', 'right'];
-
-    directions.forEach((direction) => {
-      document
-        .getElementById(`button-${direction}`)
-        .addEventListener('touchstart', () => {
-          this.changeDirection(direction);
-        });
-    });
-  }
-
-  /**
-   * Calls Pacman's changeDirection event if certain conditions are met
-   * @param {({'up'|'down'|'left'|'right'})} direction
-   */
-  changeDirection(direction) {
-    if (this.allowKeyPresses && this.gameEngine.running) {
-      this.pacman.changeDirection(direction, this.allowPacmanMovement);
-    }
-  }
-
-  /**
-   * Calls various class functions depending upon the pressed key
-   * @param {Event} e - The keydown event to evaluate
-   */
-  handleKeyDown(e) {
-    if (e.keyCode === 27) {
-      // ESC key
-      this.handlePauseKey();
-    } else if (e.keyCode === 81) {
-      // Q
-    } else if (this.movementKeys[e.keyCode]) {
-      this.changeDirection(this.movementKeys[e.keyCode]);
-    }
-  }
-
-  /**
-   * Handle behavior for the pause key
-   */
-  handlePauseKey() {
-    if (this.allowPause) {
-      this.allowPause = false;
-
-      setTimeout(() => {
-        if (!this.cutscene) {
-          this.allowPause = true;
-        }
-      }, 500);
-
-      this.gameEngine.changePausedState(this.gameEngine.running);
-
-      const audioCtx = new AudioContext();
-      const pause = new Audio("audio/pause.mp3");
-      const pauseSnd = audioCtx.createMediaElementSource(pause);
-      pauseSnd.connect(audioCtx.destination);
-      pause.play();
-
-      if (this.gameEngine.started) {
-        this.gameUi.style.filter = 'unset';
-        this.movementButtons.style.filter = 'unset';
-        this.pausedText.style.visibility = 'hidden';
-        this.pauseButton.innerHTML = 'pause';
-        this.activeTimers.forEach((timer) => {
-          timer.resume();
-   
-        });
-      } else {
-
-        this.gameUi.style.filter = 'blur(5px)';
-        this.movementButtons.style.filter = 'blur(5px)';
-        this.pausedText.style.visibility = 'visible';
-        this.pauseButton.innerHTML = 'play_arrow';
-        this.activeTimers.forEach((timer) => {
-          timer.pause();
-        });
-      }
-    }
-  }
-
-  /**
-   * Adds points to the player's total
-   * @param {({ detail: { points: Number }})} e - Contains a quantity of points to add
-   */
-  awardPoints(e) {
-    this.points += e.detail.points;
-    this.pointsDisplay.innerText = this.points;
-    var highScore = window.localStorage.getItem('highScore');
-    if (this.points > (highScore || 0)) {
-      highScore = this.points;
-      this.highScoreDisplay.innerText = highScore;
-      localStorage.setItem('highScore', highScore);
-    }
-
-    if (this.points >= 10000 && !this.extraLifeGiven) {
-      this.extraLifeGiven = true;
-
-
-      this.lives += 1;
-      this.updateExtraLivesDisplay();
-    }
-
-    if (e.detail.type === 'fruit') {
-      const left = e.detail.points >= 1000
-        ? this.scaledTileSize * 12.5
-        : this.scaledTileSize * 13;
-      const top = this.scaledTileSize * 16.5;
-      const width = e.detail.points >= 1000
-        ? this.scaledTileSize * 3
-        : this.scaledTileSize * 2;
-      const height = this.scaledTileSize * 2;
-
-      this.displayText({ left, top }, e.detail.points, 2000, width, height);
-
-
-      this.updateFruitDisplay(
-        this.fruit.determineImage('fruit', e.detail.points),
-      );
-    }
-  }
-
-  /**
-   * Animates Pacman's death, subtracts a life, and resets character positions if
-   * the player has remaining lives.
-   */
-  deathSequence() {
-    this.allowPause = false;
-    this.cutscene = true;
-
-
-
-
-    this.removeTimer({ detail: { timer: this.fruitTimer } });
-    this.removeTimer({ detail: { timer: this.ghostCycleTimer } });
-    this.removeTimer({ detail: { timer: this.endIdleTimer } });
-    this.removeTimer({ detail: { timer: this.ghostFlashTimer } });
-
-    this.allowKeyPresses = false;
-    this.pacman.moving = false;
-    this.ghosts.forEach((ghost) => {
-      const ghostRef = ghost;
-      ghostRef.moving = false;
-    });
-
-    new Timer(() => {
-      this.ghosts.forEach((ghost) => {
-        const ghostRef = ghost;
-        ghostRef.display = false;
-      });
-      this.pacman.prepDeathAnimation();
-
-
-
-      if (this.lives > 0) {
-        this.lives -= 1;
-
-        new Timer(() => {
-          this.mazeCover.style.visibility = 'visible';
-          new Timer(() => {
-            this.allowKeyPresses = true;
-            this.mazeCover.style.visibility = 'hidden';
-            this.pacman.reset();
-            this.ghosts.forEach((ghost) => {
-              ghost.reset();
-            });
-            this.fruit.hideFruit();
-
-            this.startGameplay();
-          }, 500);
-        }, 2250);
-      } else {
-        var i = 2;
-      //  this.musica(i);
-        this.gameOver();
-      }
-    }, 750);
-    
-  }
-
-  /**
-   * Displays GAME OVER text and displays the menu so players can play again
-   */
-  gameOver() {
-    var highScore = window.localStorage.getItem('highScore');
-    localStorage.setItem('highScore', highScore);
-    console.log(highScore);
-    assegnaPunteggio();
-
-    new Timer(() => {
-      this.displayText(
-        {
-          left: this.scaledTileSize * 9,
-          top: this.scaledTileSize * 16.5,
-        },
-        'game_over',
-        4000,
-        this.scaledTileSize * 10,
-        this.scaledTileSize * 2,
-      );
-      this.fruit.hideFruit();
-
-      new Timer(() => {
-        this.leftCover.style.left = '0';
-        this.rightCover.style.right = '0';
-
-        setTimeout(() => {
-          this.mainMenu.style.opacity = 1;
-          this.gameStartButton.disabled = false;
-          location.reload();
-        }, 1000);
-      }, 2500);
-    }, 2250);
-  }
-
-  /**
-   * Handle events related to the number of remaining dots
-   */
-  dotEaten() {
-    this.remainingDots -= 1;
-
-
-
-
-
-    if (this.remainingDots === 174 || this.remainingDots === 74) {
-      this.createFruit();
-    }
-
-    if (this.remainingDots === 40 || this.remainingDots === 20) {
-      this.speedUpBlinky();
-    }
-
-    if (this.remainingDots === 0) {
-      this.advanceLevel();
-    }
-  }
-
-  /**
-   * Creates a bonus fruit for ten seconds
-   */
-  createFruit() {
-    this.removeTimer({ detail: { timer: this.fruitTimer } });
-    this.fruit.showFruit(this.fruitPoints[this.level] || 5000);
-    this.fruitTimer = new Timer(() => {
-      this.fruit.hideFruit();
-    }, 10000);
-  }
-
-  /**
-   * Speeds up Blinky and raises the background noise pitch
-   */
-  speedUpBlinky() {
-    this.blinky.speedUp();
-
-    if (this.scaredGhosts.length === 0 && this.eyeGhosts === 0) {
-
-    }
-  }
-
-  /**
-   * Determines the correct siren ambience
-   * @param {Number} remainingDots
-   * @returns {String}
-   */
-  determineSiren(remainingDots) {
-    let sirenNum;
-
-    if (remainingDots > 40) {
-      sirenNum = 1;
-    } else if (remainingDots > 20) {
-      sirenNum = 2;
-    } else {
-      sirenNum = 3;
-    }
-
-    return;
-  }
-
-  /**
-   * Resets the gameboard and prepares the next level
-   */
-  advanceLevel() {
-    this.allowPause = false;
-    this.cutscene = true;
-
-    this.allowKeyPresses = false;
-
-
-    this.entityList.forEach((entity) => {
-      const entityRef = entity;
-      entityRef.moving = false;
-    });
-
-    this.removeTimer({ detail: { timer: this.fruitTimer } });
-    this.removeTimer({ detail: { timer: this.ghostCycleTimer } });
-    this.removeTimer({ detail: { timer: this.endIdleTimer } });
-    this.removeTimer({ detail: { timer: this.ghostFlashTimer } });
-
-    const imgBase = 'app/style//graphics/spriteSheets/maze/';
-
-    new Timer(() => {
-      this.ghosts.forEach((ghost) => {
-        const ghostRef = ghost;
-        ghostRef.display = false;
-      });
-
-      this.mazeImg.src = `${imgBase}maze_white.svg`;
-      new Timer(() => {
-        this.mazeImg.src = `${imgBase}maze_blue.svg`;
-        new Timer(() => {
-          this.mazeImg.src = `${imgBase}maze_white.svg`;
-          new Timer(() => {
-            this.mazeImg.src = `${imgBase}maze_blue.svg`;
-            new Timer(() => {
-              this.mazeImg.src = `${imgBase}maze_white.svg`;
-              new Timer(() => {
-                this.mazeImg.src = `${imgBase}maze_blue.svg`;
-                new Timer(() => {
-                  this.mazeCover.style.visibility = 'visible';
-                  new Timer(() => {
-                    this.mazeCover.style.visibility = 'hidden';
-                    this.level += 1;
-                    this.allowKeyPresses = true;
-                    this.entityList.forEach((entity) => {
-                      const entityRef = entity;
-                      if (entityRef.level) {
-                        entityRef.level = this.level;
-                      }
-                      entityRef.reset();
-                      if (entityRef instanceof Ghost) {
-                        entityRef.resetDefaultSpeed();
-                      }
-                      if (
-                        entityRef instanceof Pickup
-                        && entityRef.type !== 'fruit'
-                      ) {
-                        this.remainingDots += 1;
-                      }
-                    });
-                    this.startGameplay();
-                  }, 500);
-                }, 250);
-              }, 250);
-            }, 250);
-          }, 250);
-        }, 250);
-      }, 250);
-    }, 2000);
-  }
-
-  /**
-   * Flashes ghosts blue and white to indicate the end of the powerup
-   * @param {Number} flashes - Total number of elapsed flashes
-   * @param {Number} maxFlashes - Total flashes to show
-   */
-  flashGhosts(flashes, maxFlashes) {
-    if (flashes === maxFlashes) {
-      this.scaredGhosts.forEach((ghost) => {
-        ghost.endScared();
-      });
-      this.scaredGhosts = [];
-      if (this.eyeGhosts === 0) {
-
-      }
-    } else if (this.scaredGhosts.length > 0) {
-      this.scaredGhosts.forEach((ghost) => {
-        ghost.toggleScaredColor();
-      });
-
-      this.ghostFlashTimer = new Timer(() => {
-        this.flashGhosts(flashes + 1, maxFlashes);
-      }, 250);
-    }
-  }
-
-  /**
-   * Upon eating a power pellet, sets the ghosts to 'scared' mode
-   */
-  powerUp() {
-    if (this.remainingDots !== 0) {
-
-    }
-
-    this.removeTimer({ detail: { timer: this.ghostFlashTimer } });
-
-    this.ghostCombo = 0;
-    this.scaredGhosts = [];
-
-    this.ghosts.forEach((ghost) => {
-      if (ghost.mode !== 'eyes') {
-        this.scaredGhosts.push(ghost);
-      }
-    });
-
-    this.scaredGhosts.forEach((ghost) => {
-      ghost.becomeScared();
-    });
-
-    const powerDuration = Math.max((7 - this.level) * 1000, 0);
-    this.ghostFlashTimer = new Timer(() => {
-      this.flashGhosts(0, 9);
-    }, powerDuration);
-  }
-
-  /**
-   * Determines the quantity of points to give based on the current combo
-   */
-  determineComboPoints() {
-    return 100 * (2 ** this.ghostCombo);
-  }
-
-  /**
-   * Upon eating a ghost, award points and temporarily pause movement
-   * @param {CustomEvent} e - Contains a target ghost object
-   */
-  eatGhost(e) {
-    const pauseDuration = 1000;
-    const { position, measurement } = e.detail.ghost;
-
-    this.pauseTimer({ detail: { timer: this.ghostFlashTimer } });
-    this.pauseTimer({ detail: { timer: this.ghostCycleTimer } });
-    this.pauseTimer({ detail: { timer: this.fruitTimer } });
-
-
-    this.scaredGhosts = this.scaredGhosts.filter(
-      ghost => ghost.name !== e.detail.ghost.name,
-    );
-    this.eyeGhosts += 1;
-
-    this.ghostCombo += 1;
-    const comboPoints = this.determineComboPoints();
-    window.dispatchEvent(
-      new CustomEvent('awardPoints', {
-        detail: {
-          points: comboPoints,
-        },
-      }),
-    );
-    this.displayText(position, comboPoints, pauseDuration, measurement);
-
-    this.allowPacmanMovement = false;
-    this.pacman.display = false;
-    this.pacman.moving = false;
-    e.detail.ghost.display = false;
-    e.detail.ghost.moving = false;
-
-    this.ghosts.forEach((ghost) => {
-      const ghostRef = ghost;
-      ghostRef.animate = false;
-      ghostRef.pause(true);
-      ghostRef.allowCollision = false;
-    });
-
-    new Timer(() => {
-
-      this.resumeTimer({ detail: { timer: this.ghostFlashTimer } });
-      this.resumeTimer({ detail: { timer: this.ghostCycleTimer } });
-      this.resumeTimer({ detail: { timer: this.fruitTimer } });
-      this.allowPacmanMovement = true;
-      this.pacman.display = true;
-      this.pacman.moving = true;
-      e.detail.ghost.display = true;
-      e.detail.ghost.moving = true;
-      this.ghosts.forEach((ghost) => {
-        const ghostRef = ghost;
-        ghostRef.animate = true;
-        ghostRef.pause(false);
-        ghostRef.allowCollision = true;
-      });
-    }, pauseDuration);
-  }
-
-  /**
-   * Decrements the count of "eye" ghosts and updates the ambience
-   */
-  restoreGhost() {
-    this.eyeGhosts -= 1;
-
-    if (this.eyeGhosts === 0) {
-      const sound = this.scaredGhosts.length > 0
-        ? 'power_up'
-        : this.determineSiren(this.remainingDots);
-    }
-  }
-
-  /**
-   * Creates a temporary div to display points on screen
-   * @param {({ left: number, top: number })} position - CSS coordinates to display the points at
-   * @param {Number} amount - Amount of points to display
-   * @param {Number} duration - Milliseconds to display the points before disappearing
-   * @param {Number} width - Image width in pixels
-   * @param {Number} height - Image height in pixels
-   */
-  displayText(position, amount, duration, width, height) {
-    const pointsDiv = document.createElement('div');
-
-    pointsDiv.style.position = 'absolute';
-    pointsDiv.style.backgroundSize = `${width}px`;
-    pointsDiv.style.backgroundImage = 'url(app/style/graphics/'
-        + `spriteSheets/text/${amount}.svg`;
-    pointsDiv.style.width = `${width}px`;
-    pointsDiv.style.height = `${height || width}px`;
-    pointsDiv.style.top = `${position.top}px`;
-    pointsDiv.style.left = `${position.left}px`;
-    pointsDiv.style.zIndex = 2;
-
-    this.mazeDiv.appendChild(pointsDiv);
-
-    new Timer(() => {
-      this.mazeDiv.removeChild(pointsDiv);
-    }, duration);
-  }
-
-  /**
-   * Pushes a Timer to the activeTimers array
-   * @param {({ detail: { timer: Object }})} e
-   */
-  addTimer(e) {
-    this.activeTimers.push(e.detail.timer);
-  }
-
-  /**
-   * Checks if a Timer with a matching ID exists
-   * @param {({ detail: { timer: Object }})} e
-   * @returns {Boolean}
-   */
-  timerExists(e) {
-    return !!(e.detail.timer || {}).timerId;
-  }
-
-  /**
-   * Pauses a timer
-   * @param {({ detail: { timer: Object }})} e
-   */
-  pauseTimer(e) {
-    if (this.timerExists(e)) {
-      e.detail.timer.pause(true);
-    }
-  }
-
-  /**
-   * Resumes a timer
-   * @param {({ detail: { timer: Object }})} e
-   */
-  resumeTimer(e) {
-    if (this.timerExists(e)) {
-      e.detail.timer.resume(true);
-    }
-  }
-
-  /**
-   * Removes a Timer from activeTimers
-   * @param {({ detail: { timer: Object }})} e
-   */
-  removeTimer(e) {
-    if (this.timerExists(e)) {
-      window.clearTimeout(e.detail.timer.timerId);
-      this.activeTimers = this.activeTimers.filter(
-        timer => timer.timerId !== e.detail.timer.timerId,
-      );
-    }
-  }
-}
-
-
-async function controlloUtente() {
-  // Make the initial query
-  var text=document.getElementById('name');
-  var migliore = "0";
-  var highScore = "0";
-  const query = await db.collection("players").where("name", "==", text.value).get();
-
-  if (!query.empty) {
-      const snapshot = query.docs[0];
-      const data = snapshot.data();
-      let migliore  = `${data.score}`;
-      var highScore = migliore;
-      console.log("Vecchio utente, assegno punteggio ", highScore);
-      window.localStorage.setItem('highScore', highScore);
-      console.log(highScore);
-      console.log(data);
-  } else {
-      var highScore = 0;
-      window.localStorage.setItem('highScore', highScore);
-      console.log("Nuovo utente, assegno punteggio ", highScore);
-  }
-
-}
-
-async function assegnaPunteggio() {
-  // Make the initial query
-
-  var hiscore = window.localStorage.getItem('highScore');
-  var text=document.getElementById('name');
-  var x = parseInt(hiscore);
-
-  const query = await db.collection("players").where("name", "==", text.value).get();
-
-  if (!query.empty) {
-      const snapshot = query.docs[0];
-      const data = snapshot.data();
-      let migliore  = `${data.score}`;
-      console.log("Nome", text.value, "punteggio", hiscore, "cloud", migliore, "x", x);
-      if (x > migliore){
-          console.log("Miglior punteggio superato");
-          db.collection("players").where("name", "==", text.value)
-          .get()
-          .then((querySnapshot) => {
-              querySnapshot.forEach((doc) => {
-              // doc.data() is never undefined for query doc snapshots
-                  db.collection("players").doc(doc.id).update({
-                      score: x,
-                  })
-                  console.log("Dati precedenti aggiornati");
-              });
-          })
-      }else{
-          console.log("Miglior punteggio non superato");
-      }
-  } else {
-      if( document.getElementById("name").value != ''){
-          db.collection("players").add({
-              name: text.value,
-              score: x,
-          })
-          .then((docRef) => {
-              console.log("Document written with ID: ", docRef.id);
-          })
-          .catch((error) => {
-          console.error("Error adding document: ", error);
-          });
-      } 
-      console.log("Nuovo utente, assegno nome", text.value, "e punteggio ", hiscore);
-  }
-}
-
-
-
-
-class GameEngine {
-  constructor(maxFps, entityList) {
-    this.fpsDisplay = document.getElementById('fps-display');
-    this.elapsedMs = 0;
-    this.lastFrameTimeMs = 0;
-    this.entityList = entityList;
-    this.maxFps = maxFps;
-    this.timestep = 1000 / this.maxFps;
-    this.fps = this.maxFps;
-    this.framesThisSecond = 0;
-    this.lastFpsUpdate = 0;
-    this.frameId = 0;
-    this.running = false;
-    this.started = false;
-  }
-
-  /**
-   * Toggles the paused/running status of the game
-   * @param {Boolean} running - Whether the game is currently in motion
-   */
-  changePausedState(running) {
-    if (running) {
-      this.stop();
-    } else {
-      this.start();
-    }
-  }
-
-  /**
-   * Updates the on-screen FPS counter once per second
-   * @param {number} timestamp - The amount of MS which has passed since starting the game engine
-   */
-  updateFpsDisplay(timestamp) {
-    if (timestamp > this.lastFpsUpdate + 1000) {
-      this.fps = (this.framesThisSecond + this.fps) / 2;
-      this.lastFpsUpdate = timestamp;
-      this.framesThisSecond = 0;
-    }
-    this.framesThisSecond += 1;
-    this.fpsDisplay.textContent = `${Math.round(this.fps)} FPS`;
-  }
-
-  /**
-   * Calls the draw function for every member of the entityList
-   * @param {number} interp - The animation accuracy as a percentage
-   * @param {Array} entityList - List of entities to be used throughout the game
-   */
-  draw(interp, entityList) {
-    entityList.forEach((entity) => {
-      if (typeof entity.draw === 'function') {
-        entity.draw(interp);
-      }
-    });
-  }
-
-  /**
-   * Calls the update function for every member of the entityList
-   * @param {number} elapsedMs - The amount of MS that have passed since the last update
-   * @param {Array} entityList - List of entities to be used throughout the game
-   */
-  update(elapsedMs, entityList) {
-    entityList.forEach((entity) => {
-      if (typeof entity.update === 'function') {
-        entity.update(elapsedMs);
-      }
-    });
-  }
-
-  /**
-   * In the event that a ton of unsimulated frames pile up, discard all of these frames
-   * to prevent crashing the game
-   */
-  panic() {
-    this.elapsedMs = 0;
-  }
-
-  /**
-   * Draws an initial frame, resets a few tracking variables related to animation, and calls
-   * the mainLoop function to start the engine
-   */
-  start() {
-    if (!this.started) {
-      this.started = true;
-
-      this.frameId = requestAnimationFrame((firstTimestamp) => {
-        this.draw(1, []);
-        this.running = true;
-        this.lastFrameTimeMs = firstTimestamp;
-        this.lastFpsUpdate = firstTimestamp;
-        this.framesThisSecond = 0;
-
-        this.frameId = requestAnimationFrame((timestamp) => {
-          this.mainLoop(timestamp);
-        });
-      });
-    }
-  }
-
-  /**
-   * Stops the engine and cancels the current animation frame
-   */
-  stop() {
-    this.running = false;
-    this.started = false;
-    cancelAnimationFrame(this.frameId);
-  }
-
-  /**
-   * The loop which will process all necessary frames to update the game's entities
-   * prior to animating them
-   */
-  processFrames() {
-    let numUpdateSteps = 0;
-    while (this.elapsedMs >= this.timestep) {
-      this.update(this.timestep, this.entityList);
-      this.elapsedMs -= this.timestep;
-      numUpdateSteps += 1;
-      if (numUpdateSteps >= this.maxFps) {
-        this.panic();
-        break;
-      }
-    }
-  }
-
-  /**
-   * A single cycle of the engine which checks to see if enough time has passed, and, if so,
-   * will kick off the loops to update and draw the game's entities.
-   * @param {number} timestamp - The amount of MS which has passed since starting the game engine
-   */
-  engineCycle(timestamp) {
-    if (timestamp < this.lastFrameTimeMs + (1000 / this.maxFps)) {
-      this.frameId = requestAnimationFrame((nextTimestamp) => {
-        this.mainLoop(nextTimestamp);
-      });
-      return;
-    }
-
-    this.elapsedMs += timestamp - this.lastFrameTimeMs;
-    this.lastFrameTimeMs = timestamp;
-    this.updateFpsDisplay(timestamp);
-    this.processFrames();
-    this.draw(this.elapsedMs / this.timestep, this.entityList);
-
-    this.frameId = requestAnimationFrame((nextTimestamp) => {
-      this.mainLoop(nextTimestamp);
-    });
-  }
-
-  /**
-   * The endless loop which will kick off engine cycles so long as the game is running
-   * @param {number} timestamp - The amount of MS which has passed since starting the game engine
-   */
-  mainLoop(timestamp) {
-    this.engineCycle(timestamp);
-  }
-}
-
-
-class Pickup {
-  constructor(type, scaledTileSize, column, row, pacman, mazeDiv, points) {
-    this.type = type;
-    this.pacman = pacman;
-    this.mazeDiv = mazeDiv;
-    this.points = points;
-    this.nearPacman = false;
-
-    this.fruitImages = {
-      100: 'cherry',
-      300: 'strawberry',
-      500: 'orange',
-      700: 'apple',
-      1000: 'melon',
-      2000: 'galaxian',
-      3000: 'bell',
-      5000: 'key',
-    };
-
-    this.setStyleMeasurements(type, scaledTileSize, column, row, points);
-  }
-
-  /**
-   * Resets the pickup's visibility
-   */
-  reset() {
-    this.animationTarget.style.visibility = (this.type === 'fruit')
-      ? 'hidden' : 'visible';
-  }
-
-  /**
-   * Sets various style measurements for the pickup depending on its type
-   * @param {('pacdot'|'powerPellet'|'fruit')} type - The classification of pickup
-   * @param {number} scaledTileSize
-   * @param {number} column
-   * @param {number} row
-   * @param {number} points
-   */
-  setStyleMeasurements(type, scaledTileSize, column, row, points) {
-    if (type === 'pacdot') {
-      this.size = scaledTileSize * 0.25;
-      this.x = (column * scaledTileSize) + ((scaledTileSize / 8) * 3);
-      this.y = (row * scaledTileSize) + ((scaledTileSize / 8) * 3);
-    } else if (type === 'powerPellet') {
-      this.size = scaledTileSize;
-      this.x = (column * scaledTileSize);
-      this.y = (row * scaledTileSize);
-    } else {
-      this.size = scaledTileSize * 2;
-      this.x = (column * scaledTileSize) - (scaledTileSize * 0.5);
-      this.y = (row * scaledTileSize) - (scaledTileSize * 0.5);
-    }
-
-    this.center = {
-      x: column * scaledTileSize,
-      y: row * scaledTileSize,
-    };
-
-    this.animationTarget = document.createElement('div');
-    this.animationTarget.style.position = 'absolute';
-    this.animationTarget.style.backgroundSize = `${this.size}px`;
-    this.animationTarget.style.backgroundImage = this.determineImage(
-      type, points,
-    );
-    this.animationTarget.style.height = `${this.size}px`;
-    this.animationTarget.style.width = `${this.size}px`;
-    this.animationTarget.style.top = `${this.y}px`;
-    this.animationTarget.style.left = `${this.x}px`;
-    this.mazeDiv.appendChild(this.animationTarget);
-
-    if (type === 'powerPellet') {
-      this.animationTarget.classList.add('power-pellet');
-    }
-
-    this.reset();
-  }
-
-  /**
-   * Determines the Pickup image based on type and point value
-   * @param {('pacdot'|'powerPellet'|'fruit')} type - The classification of pickup
-   * @param {Number} points
-   * @returns {String}
-   */
-  determineImage(type, points) {
-    let image = '';
-
-    if (type === 'fruit') {
-      image = this.fruitImages[points] || 'cherry';
-      this.animationTarget.style.backgroundSize = `128px`;
-    } else {
-      image = type;
-    }
-
-    return `url(app/style/graphics/spriteSheets/pickups/${image}.svg)`;
-  }
-
-  /**
-   * Shows a bonus fruit, resetting its point value and image
-   * @param {number} points
-   */
-  showFruit(points) {
-    this.points = points;
-    this.animationTarget.style.backgroundImage = this.determineImage(
-      this.type, points,
-    );
-    this.animationTarget.style.visibility = 'visible';
-  }
-
-  /**
-   * Makes the fruit invisible (happens if Pacman was too slow)
-   */
-  hideFruit() {
-    this.animationTarget.style.visibility = 'hidden';
-  }
-
-  /**
-   * Returns true if the Pickup is touching a bounding box at Pacman's center
-   * @param {({ x: number, y: number, size: number})} pickup
-   * @param {({ x: number, y: number, size: number})} originalPacman
-   */
-  checkForCollision(pickup, originalPacman) {
-    const pacman = Object.assign({}, originalPacman);
-
-    pacman.x += (pacman.size * 0.25);
-    pacman.y += (pacman.size * 0.25);
-    pacman.size /= 2;
-
-    return (pickup.x < pacman.x + pacman.size
-      && pickup.x + pickup.size > pacman.x
-      && pickup.y < pacman.y + pacman.size
-      && pickup.y + pickup.size > pacman.y);
-  }
-
-  /**
-   * Checks to see if the pickup is close enough to Pacman to be considered for collision detection
-   * @param {number} maxDistance - The maximum distance Pacman can travel per cycle
-   * @param {({ x:number, y:number })} pacmanCenter - The center of Pacman's hitbox
-   * @param {Boolean} debugging - Flag to change the appearance of pickups for testing
-   */
-  checkPacmanProximity(maxDistance, pacmanCenter, debugging) {
-    if (this.animationTarget.style.visibility !== 'hidden') {
-      const distance = Math.sqrt(
-        ((this.center.x - pacmanCenter.x) ** 2)
-        + ((this.center.y - pacmanCenter.y) ** 2),
-      );
-
-      this.nearPacman = (distance <= maxDistance);
-
-      if (debugging) {
-        this.animationTarget.style.background = this.nearPacman
-          ? 'lime' : 'red';
-      }
-    }
-  }
-
-  /**
-   * Checks if the pickup is visible and close to Pacman
-   * @returns {Boolean}
-   */
-  shouldCheckForCollision() {
-    return this.animationTarget.style.visibility !== 'hidden'
-      && this.nearPacman;
-  }
-
-  /**
-   * If the Pickup is still visible, it checks to see if it is colliding with Pacman.
-   * It will turn itself invisible and cease collision-detection after the first
-   * collision with Pacman.
-   */
-  update() {
-    if (this.shouldCheckForCollision()) {
-      if (this.checkForCollision(
-        {
-          x: this.x,
-          y: this.y,
-          size: this.size,
-        }, {
-          x: this.pacman.position.left,
-          y: this.pacman.position.top,
-          size: this.pacman.measurement,
-        },
-      )) {
-        this.animationTarget.style.visibility = 'hidden';
-        window.dispatchEvent(new CustomEvent('awardPoints', {
-          detail: {
-            points: this.points,
-            type: this.type,
-          },
-        }));
-
-        if (this.type === 'pacdot') {
-          window.dispatchEvent(new Event('dotEaten'));
-        } else if (this.type === 'powerPellet') {
-          window.dispatchEvent(new Event('dotEaten'));
-          window.dispatchEvent(new Event('powerUp'));
-        }
-      }
-    }
-  }
-}
-
-
 class CharacterUtil {
   constructor() {
     this.directions = {
@@ -3319,6 +3117,207 @@ class Timer {
             timer: this,
           },
         }));
+      }
+    }
+  }
+}
+
+
+class Pickup {
+  constructor(type, scaledTileSize, column, row, pacman, mazeDiv, points) {
+    this.type = type;
+    this.pacman = pacman;
+    this.mazeDiv = mazeDiv;
+    this.points = points;
+    this.nearPacman = false;
+
+    this.fruitImages = {
+      100: 'cherry',
+      300: 'strawberry',
+      500: 'orange',
+      700: 'apple',
+      1000: 'melon',
+      2000: 'galaxian',
+      3000: 'bell',
+      5000: 'key',
+    };
+
+    this.setStyleMeasurements(type, scaledTileSize, column, row, points);
+  }
+
+  /**
+   * Resets the pickup's visibility
+   */
+  reset() {
+    this.animationTarget.style.visibility = (this.type === 'fruit')
+      ? 'hidden' : 'visible';
+  }
+
+  /**
+   * Sets various style measurements for the pickup depending on its type
+   * @param {('pacdot'|'powerPellet'|'fruit')} type - The classification of pickup
+   * @param {number} scaledTileSize
+   * @param {number} column
+   * @param {number} row
+   * @param {number} points
+   */
+  setStyleMeasurements(type, scaledTileSize, column, row, points) {
+    if (type === 'pacdot') {
+      this.size = scaledTileSize * 0.25;
+      this.x = (column * scaledTileSize) + ((scaledTileSize / 8) * 3);
+      this.y = (row * scaledTileSize) + ((scaledTileSize / 8) * 3);
+    } else if (type === 'powerPellet') {
+      this.size = scaledTileSize;
+      this.x = (column * scaledTileSize);
+      this.y = (row * scaledTileSize);
+    } else {
+      this.size = scaledTileSize * 2;
+      this.x = (column * scaledTileSize) - (scaledTileSize * 0.5);
+      this.y = (row * scaledTileSize) - (scaledTileSize * 0.5);
+    }
+
+    this.center = {
+      x: column * scaledTileSize,
+      y: row * scaledTileSize,
+    };
+
+    this.animationTarget = document.createElement('div');
+    this.animationTarget.style.position = 'absolute';
+    this.animationTarget.style.backgroundSize = `${this.size}px`;
+    this.animationTarget.style.backgroundImage = this.determineImage(
+      type, points,
+    );
+    this.animationTarget.style.height = `${this.size}px`;
+    this.animationTarget.style.width = `${this.size}px`;
+    this.animationTarget.style.top = `${this.y}px`;
+    this.animationTarget.style.left = `${this.x}px`;
+    this.mazeDiv.appendChild(this.animationTarget);
+
+    if (type === 'powerPellet') {
+      this.animationTarget.classList.add('power-pellet');
+    }
+
+    this.reset();
+  }
+
+  /**
+   * Determines the Pickup image based on type and point value
+   * @param {('pacdot'|'powerPellet'|'fruit')} type - The classification of pickup
+   * @param {Number} points
+   * @returns {String}
+   */
+  determineImage(type, points) {
+    let image = '';
+
+    if (type === 'fruit') {
+      image = this.fruitImages[points] || 'cherry';
+    } else {
+      image = type;
+    }
+
+    return `url(app/style/graphics/spriteSheets/pickups/${image}.svg)`;
+  }
+
+  /**
+   * Shows a bonus fruit, resetting its point value and image
+   * @param {number} points
+   */
+  showFruit(points) {
+    this.points = points;
+    this.animationTarget.style.backgroundImage = this.determineImage(
+      this.type, points,
+    );
+    this.animationTarget.style.visibility = 'visible';
+  }
+
+  /**
+   * Makes the fruit invisible (happens if Pacman was too slow)
+   */
+  hideFruit() {
+    this.animationTarget.style.visibility = 'hidden';
+  }
+
+  /**
+   * Returns true if the Pickup is touching a bounding box at Pacman's center
+   * @param {({ x: number, y: number, size: number})} pickup
+   * @param {({ x: number, y: number, size: number})} originalPacman
+   */
+  checkForCollision(pickup, originalPacman) {
+    const pacman = Object.assign({}, originalPacman);
+
+    pacman.x += (pacman.size * 0.25);
+    pacman.y += (pacman.size * 0.25);
+    pacman.size /= 2;
+
+    return (pickup.x < pacman.x + pacman.size
+      && pickup.x + pickup.size > pacman.x
+      && pickup.y < pacman.y + pacman.size
+      && pickup.y + pickup.size > pacman.y);
+  }
+
+  /**
+   * Checks to see if the pickup is close enough to Pacman to be considered for collision detection
+   * @param {number} maxDistance - The maximum distance Pacman can travel per cycle
+   * @param {({ x:number, y:number })} pacmanCenter - The center of Pacman's hitbox
+   * @param {Boolean} debugging - Flag to change the appearance of pickups for testing
+   */
+  checkPacmanProximity(maxDistance, pacmanCenter, debugging) {
+    if (this.animationTarget.style.visibility !== 'hidden') {
+      const distance = Math.sqrt(
+        ((this.center.x - pacmanCenter.x) ** 2)
+        + ((this.center.y - pacmanCenter.y) ** 2),
+      );
+
+      this.nearPacman = (distance <= maxDistance);
+
+      if (debugging) {
+        this.animationTarget.style.background = this.nearPacman
+          ? 'lime' : 'red';
+      }
+    }
+  }
+
+  /**
+   * Checks if the pickup is visible and close to Pacman
+   * @returns {Boolean}
+   */
+  shouldCheckForCollision() {
+    return this.animationTarget.style.visibility !== 'hidden'
+      && this.nearPacman;
+  }
+
+  /**
+   * If the Pickup is still visible, it checks to see if it is colliding with Pacman.
+   * It will turn itself invisible and cease collision-detection after the first
+   * collision with Pacman.
+   */
+  update() {
+    if (this.shouldCheckForCollision()) {
+      if (this.checkForCollision(
+        {
+          x: this.x,
+          y: this.y,
+          size: this.size,
+        }, {
+          x: this.pacman.position.left,
+          y: this.pacman.position.top,
+          size: this.pacman.measurement,
+        },
+      )) {
+        this.animationTarget.style.visibility = 'hidden';
+        window.dispatchEvent(new CustomEvent('awardPoints', {
+          detail: {
+            points: this.points,
+            type: this.type,
+          },
+        }));
+
+        if (this.type === 'pacdot') {
+          window.dispatchEvent(new Event('dotEaten'));
+        } else if (this.type === 'powerPellet') {
+          window.dispatchEvent(new Event('dotEaten'));
+          window.dispatchEvent(new Event('powerUp'));
+        }
       }
     }
   }

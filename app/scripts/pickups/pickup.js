@@ -86,7 +86,6 @@ class Pickup {
 
     if (type === 'fruit') {
       image = this.fruitImages[points] || 'cherry';
-      this.animationTarget.style.backgroundSize = `128px`;
     } else {
       image = type;
     }
