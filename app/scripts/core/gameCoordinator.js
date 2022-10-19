@@ -680,9 +680,9 @@ FINE INIZIALIZZAZIONE DEI SUONI
     var ost,sil;
     
     sil = new Audio('/AcidMan/audio/morte.mp3');
+    this.ost = new Audio('/AcidMan/audio/ost.mp3');
 
-    if(i == 1){
-      this.ost = new Audio('/AcidMan/audio/ost.mp3');
+    if(i == 1){  
       this.ost.play();
       this.ost.loop = true;
     }else{
