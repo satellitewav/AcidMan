@@ -994,7 +994,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
    * Animates Pacman's death, subtracts a life, and resets character positions if
    * the player has remaining lives.
    */
-  deathSequence() { /*
+  deathSequence() { 
     this.allowPause = false;
     this.cutscene = true;
 
@@ -1045,7 +1045,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
         this.gameOver();
       }
     }, 750);
-    */
+  
   }
 
   /**
