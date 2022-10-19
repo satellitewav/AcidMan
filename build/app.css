@@ -133,7 +133,7 @@ body {
 }
 @media (orientation: portrait) {
   .game-ui {
-    height: 66%;
+    height: 80%;
   }
 }
 .loading-cover {

@@ -160,6 +160,9 @@ class GameCoordinator {
     this.allowPause = false;
     this.cutscene = true;
 
+    var i = 2;
+    this.musica(i);
+
     this.removeTimer({ detail: { timer: this.fruitTimer } });
     this.removeTimer({ detail: { timer: this.ghostCycleTimer } });
     this.removeTimer({ detail: { timer: this.endIdleTimer } });
@@ -670,16 +673,33 @@ FINE INIZIALIZZAZIONE DEI SUONI
     }
   }
 
+
+
+  musica(i){
+    
+    var ost,sil;
+    
+    sil = new Audio('/AcidMan/audio/morte.mp3');
+
+    if(i == 1){
+      this.ost = new Audio('/AcidMan/audio/ost.mp3');
+      this.ost.play();
+      this.ost.loop = true;
+    }else{
+      this.ost.pause();
+      this.ost.currentTime = 0;
+      sil.play();
+    }
+  }
+
   /**
    * Displays "Ready!" and allows Pacman to move after a breif delay
    * @param {Boolean} initialStart - Special condition for the game's beginning
    */
   startGameplay(initialStart) {
     if (initialStart) {
-      var ost;
-      ost = new Audio('/pacman-firebase/audio/ost.mp3');
-      ost.play();
-      ost.loop = true;
+      var i = 1;
+      this.musica(i);
     }
 
     this.scaredGhosts = [];
@@ -742,7 +762,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
    * Displays a rolling log of the seven most-recently eaten fruit
    * @param {String} rawImageSource
    */
-  updateFruitDisplay(rawImageSource) {
+  updateFruitDisplay(rawImageSource) { /*
     const parsedSource = rawImageSource.slice(
       rawImageSource.indexOf('(') + 1,
       rawImageSource.indexOf(')'),
@@ -755,7 +775,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
     const fruitPic = document.createElement('img');
     fruitPic.setAttribute('src', parsedSource);
     fruitPic.style.height = `${this.scaledTileSize * 2}px`;
-    this.fruitDisplay.appendChild(fruitPic);
+    this.fruitDisplay.appendChild(fruitPic); */
   }
 
   /**
@@ -910,7 +930,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
         this.pauseButton.innerHTML = 'pause';
         this.activeTimers.forEach((timer) => {
           timer.resume();
-          ost.play();
+   
         });
       } else {
 
@@ -974,6 +994,9 @@ FINE INIZIALIZZAZIONE DEI SUONI
     this.allowPause = false;
     this.cutscene = true;
 
+
+
+
     this.removeTimer({ detail: { timer: this.fruitTimer } });
     this.removeTimer({ detail: { timer: this.ghostCycleTimer } });
     this.removeTimer({ detail: { timer: this.endIdleTimer } });
@@ -1013,9 +1036,12 @@ FINE INIZIALIZZAZIONE DEI SUONI
           }, 500);
         }, 2250);
       } else {
+        var i = 2;
+        this.musica(i);
         this.gameOver();
       }
     }, 750);
+    
   }
 
   /**
