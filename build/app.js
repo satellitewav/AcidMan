@@ -1271,7 +1271,7 @@ class GameCoordinator {
     this.cutscene = true;
 
     var i = 2;
-    this.musica(i);
+    // this.musica(i);
 
     this.removeTimer({ detail: { timer: this.fruitTimer } });
     this.removeTimer({ detail: { timer: this.ghostCycleTimer } });
@@ -1808,8 +1808,12 @@ FINE INIZIALIZZAZIONE DEI SUONI
    */
   startGameplay(initialStart) {
     if (initialStart) {
-      var i = 1;
-      this.musica(i);
+    //  var i = 1;
+    //  this.musica(i);
+    var ost;
+    ost = new Audio('/audio/ost.mp3');
+    ost.loop = true;
+    ost.play();
     }
 
     this.scaredGhosts = [];
@@ -2147,7 +2151,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
         }, 2250);
       } else {
         var i = 2;
-        this.musica(i);
+      //  this.musica(i);
         this.gameOver();
       }
     }, 750);
