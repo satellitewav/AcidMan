@@ -701,7 +701,7 @@ FINE INIZIALIZZAZIONE DEI SUONI
     //  var i = 1;
     //  this.musica(i);
     var ost;
-    ost = new Audio('/audio/ost.mp3');
+    ost = new Audio('/AcidMan/audio/ost.mp3');
     ost.loop = true;
     ost.play();
     }
