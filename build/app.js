@@ -63,7 +63,7 @@ class Ghost {
 
     this.scaredSpeed = pacmanSpeed * 0.5;
     this.transitionSpeed = pacmanSpeed * 0.4;
-    this.eyeSpeed = pacmanSpeed * 2;
+    this.eyeSpeed = pacmanSpeed * 1;
 
     this.velocityPerMs = this.defaultSpeed;
     this.moving = false;
