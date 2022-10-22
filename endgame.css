@@ -60,7 +60,7 @@ body, html {
   margin-bottom: 0.5rem;
 }
 .top3 .item .grosso {
-  font-size: 1rem;
+  font-size: 15px;
   margin-bottom: 0.5rem;
 }
 .top3 .item .score {
@@ -74,12 +74,12 @@ body, html {
 .top3 .item.one {
   width: 10rem;
   height: 11rem;
-  padding-top: 3rem;
+  padding-top: 2.5rem;
 }
 .top3 .item.two {
   width: 10rem;
   height: 10.5rem;
-  padding-top: 3rem;
+  padding-top: 2.5rem;
 }
 .top3 .item.one .pic {
   top: -2.5rem;
