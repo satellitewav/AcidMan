@@ -171,3 +171,23 @@ a {
   background: #125688;
   color: white;
 }
+
+.game-start {
+  background-color: #fcc73f;
+  border: 2px solid black;
+  border-radius: 10px;
+  box-shadow: 2px 2px red;
+  color: black;
+  cursor: pointer;
+  font-size: 18px;
+  outline: none;
+  padding: 12px;
+  text-decoration: none;
+}
+.game-start:active {
+  box-shadow: none;
+  transform: translateX(5px) translateY(5px);
+}
+.game-start:disabled {
+  cursor: default;
+}
