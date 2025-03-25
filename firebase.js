@@ -10,38 +10,51 @@ var firebaseConfig = {
   measurementId: "G-C6VT9P3C21"
 };
 
-// Initialize Firebase
-
+// Inizializza Firebase
 var app = firebase.initializeApp(firebaseConfig);
-        db = firebase.firestore(app);
-        firebase.firestore().settings({
-            cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
-        });
 
+// Inizializza Firestore e applica le impostazioni
+var db = firebase.firestore(app);
+db.settings({
+    cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
+});
+
+// Inizializza Analytics (se necessario)
 const analytics = firebase.analytics();
 
-db.collection("players2").orderBy("score", "desc").limit(5)
-.get()
-.then(querySnapshot=>{
-        querySnapshot.forEach(doc=>{
-            let data = doc.data();
-            let row  = `<tr>
-                            <td>${data.name}</td>
-                            <td>${data.score}</td>
-                      </tr>`;
-            let table = document.getElementById('myTable')
-            table.innerHTML += row
-        })
-})
-.catch(err=>{
-    console.log(`Error: ${err}`)
-}); 
+// Imposta un listener in tempo reale per aggiornare la classifica
+db.collection("players2")
+  .orderBy("score", "desc")
+  .limit(5)
+  .onSnapshot(querySnapshot => {
+      // Assicurati che l'elemento con id "myTable" esista nel DOM
+      let table = document.getElementById('myTable');
+      if (!table) {
+          console.error('Elemento con id "myTable" non trovato.');
+          return;
+      }
+      // Resetta il contenuto per evitare duplicati
+      table.innerHTML = "";
+      
+      querySnapshot.forEach(doc => {
+          let data = doc.data();
+          let row  = `<tr>
+                          <td>${data.name}</td>
+                          <td>${data.score}</td>
+                        </tr>`;
+          table.innerHTML += row;
+      });
+  }, err => {
+      console.error(`Error: ${err}`);
+  });
 
-function display(){
-          document.getElementById('table').style.display = "block";
+// Funzione per mostrare la classifica
+function display() {
+    document.getElementById('table').style.display = "block";
 }
 
+// Impedisci lo scroll della pagina
 window.addEventListener("scroll", (e) => {
     e.preventDefault();
     window.scrollTo(0, 0);
-  });
+});
