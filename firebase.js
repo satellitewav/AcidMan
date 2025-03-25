@@ -4,7 +4,7 @@ var firebaseConfig = {
   apiKey: "AIzaSyAmIN1c6Pq_XtudGypeqs8hATMST5b1lcM",
   authDomain: "acidman-e8e44.firebaseapp.com",
   projectId: "acidman-e8e44",
-  storageBucket: "acidman-e8e44.appspot.com",
+  storageBucket: "acidman-e8e44.firebasestorage.app",
   messagingSenderId: "232466403645",
   appId: "1:232466403645:web:fdcf6dc54d14c1cf253554",
   measurementId: "G-C6VT9P3C21"
